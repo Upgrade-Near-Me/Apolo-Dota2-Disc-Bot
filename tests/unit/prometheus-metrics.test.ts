@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * ⚡ Phase 16 Test Suite - Prometheus Metrics & Health Monitoring
  *

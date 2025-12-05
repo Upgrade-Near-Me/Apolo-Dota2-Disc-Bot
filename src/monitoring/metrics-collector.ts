@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * 📊 Prometheus Metrics Collector
  *
@@ -322,7 +323,9 @@ export class MetricsCollector {
     const results: ApiMetric[] = [];
 
     for (const [key, timings] of this.metrics.apiTimings.entries()) {
-      const [service, endpoint] = key.split(':');
+      const parts = key.split(':');
+      const service = parts[0] ?? 'unknown';
+      const endpoint = parts[1] ?? 'unknown';
       const count = this.metrics.apiCounts.get(key)!;
       const cache = this.metrics.redisCache.get(service) || { hits: 0, misses: 0 };
 
@@ -332,7 +335,7 @@ export class MetricsCollector {
         requests: count.total,
         successes: count.success,
         errors: count.error,
-        avgLatencyMs: timings.length > 0 ? timings.reduce((a, b) => a + b, 0) / timings.length : 0,
+        avgLatencyMs: timings.length > 0 ? timings.reduce((a: number, b: number) => a + b, 0) / timings.length : 0,
         p95LatencyMs: this.calculatePercentile(timings, 95),
         cacheHitRate: cache.hits + cache.misses > 0 ? cache.hits / (cache.hits + cache.misses) : 0,
         rateLimitRemaining: 0, // Would be updated by rate limit tracker

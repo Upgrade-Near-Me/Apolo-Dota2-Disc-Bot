@@ -31,10 +31,18 @@ import { dirname, join } from 'path';
 import { readdirSync } from 'fs';
 import pool from './database/index.js';
 import { safeReply, safeEdit, safeDefer, safeUpdate } from './utils/interactionGuard.js';
-import { t, loadGuildLocale } from './utils/i18n.js';
+import { resolveLocale } from './utils/i18n.js';
+import { i18nService } from './I18nService.js';
 import logger from './utils/logger.js';
 import { redisService } from './services/RedisService.js';
 import { isValidSteamId } from './utils/validation.js';
+import { startMetricsServer } from './server.js';
+import { 
+  updateDiscordMetrics, 
+  updateRedisConnectionState, 
+  discordEventsCounter 
+} from './services/MetricsService.js';
+import { trackCommandLatency, createInteractionTracker } from './utils/commandLatencyTracker.js';
 
 // Import V2.0 Handler Modules
 import { handleModalSubmit as handleV2ModalSubmit } from './handlers/modalHandler.js';
@@ -217,6 +225,24 @@ client.once(Events.ClientReady, () => {
     logger.info({ loadedCount }, '✅ Loaded guild locale preferences');
 
     logger.info('🎉 Bot fully initialized and ready!');
+    
+    // Start Prometheus metrics server
+    startMetricsServer();
+    
+    // Update initial Discord metrics
+    const guildsCount = client.guilds.cache.size;
+    const usersCount = client.guilds.cache.reduce((acc, guild) => acc + guild.memberCount, 0);
+    updateDiscordMetrics(guildsCount, usersCount);
+    
+    // Update Redis connection state
+    updateRedisConnectionState(true);
+    
+    // Update Discord metrics every 60 seconds
+    setInterval(() => {
+      const guildsCount = client.guilds.cache.size;
+      const usersCount = client.guilds.cache.reduce((acc, guild) => acc + guild.memberCount, 0);
+      updateDiscordMetrics(guildsCount, usersCount);
+    }, 60000);
   })();
 });
 
@@ -225,6 +251,9 @@ client.once(Events.ClientReady, () => {
  * ============================================ */
 
 client.on(Events.InteractionCreate, (interaction: Interaction) => {
+    // Track Discord event
+    discordEventsCounter.inc({ event: 'interactionCreate' });
+  
   void (async () => {
     try {
       // Handle slash commands
@@ -291,7 +320,10 @@ async function handleSlashCommand(
   }
 
   try {
-    await command.execute(interaction);
+    // Track command latency and execution time
+    const tracker = createInteractionTracker(interaction);
+    await trackCommandLatency(interaction.commandName, interaction.guildId, () => command.execute(interaction));
+    tracker.end('success');
   } catch (error) {
     console.error(`❌ Error executing ${interaction.commandName}:`, {
       error: error instanceof Error ? error.message : String(error),
@@ -315,21 +347,25 @@ async function handleButtonInteraction(
   interaction: ButtonInteraction
 ): Promise<void> {
   const customId = interaction.customId;
+  const tracker = createInteractionTracker(interaction);
 
-  // Connect Steam button
-  if (customId === 'connect_steam_button') {
-    const connectCommand = client.commands.get('connectsteamaccount');
-    if (connectCommand?.handleButton) {
-      await connectCommand.handleButton(interaction);
+  try {
+    // Connect Steam button
+    if (customId === 'connect_steam_button') {
+      const connectCommand = client.commands.get('connectsteamaccount');
+      if (connectCommand?.handleButton) {
+        await connectCommand.handleButton(interaction);
+      }
+      tracker.end('success');
+      return;
     }
-    return;
-  }
 
-  // Confirm Steam link
-  if (customId.startsWith('confirm_steam_')) {
-    await handleConfirmSteamLink(interaction, customId);
-    return;
-  }
+    // Confirm Steam link
+    if (customId.startsWith('confirm_steam_')) {
+      await handleConfirmSteamLink(interaction, customId);
+      tracker.end('success');
+      return;
+    }
 
   // Cancel Steam link
   if (customId === 'cancel_steam') {
@@ -381,6 +417,10 @@ async function handleButtonInteraction(
   }
 
   logger.warn({ customId }, '⚠️ Unhandled button interaction');
+  } catch (error) {
+    tracker.end('error');
+    throw error;
+  }
 }
 
 /* ============================================
@@ -391,29 +431,55 @@ async function handleModalSubmit(
   interaction: ModalSubmitInteraction
 ): Promise<void> {
   const customId = interaction.customId;
+  const tracker = createInteractionTracker(interaction);
 
-  // Connect Steam modal
-  if (customId === 'connect_steam_modal') {
-    const dashboardCommand = client.commands.get('dashboard');
-    if (dashboardCommand?.handleModal) {
-      await dashboardCommand.handleModal(interaction);
+  try {
+    // Connect Steam modal
+    if (customId === 'connect_steam_modal') {
+      const dashboardCommand = client.commands.get('dashboard');
+      if (dashboardCommand?.handleModal) {
+        await trackCommandLatency(
+          'dashboard_modal_connect',
+          interaction.guildId,
+          async () => {
+            const handler = dashboardCommand.handleModal;
+            if (handler) {
+              await handler(interaction);
+            }
+          }
+        );
+        tracker.end('success');
+      }
+      return;
     }
-    return;
-  }
 
-  // AI custom question modal
-  if (customId === 'ai_custom_modal') {
-    await handleAiCustomModal(interaction);
-    return;
-  }
+    // AI custom question modal
+    if (customId === 'ai_custom_modal') {
+      await trackCommandLatency(
+        'ai_custom_modal',
+        interaction.guildId,
+        () => handleAiCustomModal(interaction)
+      );
+      tracker.end('success');
+      return;
+    }
+    // Announce modal
+    if (customId === 'announce_modal') {
+      await trackCommandLatency(
+        'announce_modal',
+        interaction.guildId,
+        () => handleAnnounceModal(interaction)
+      );
+      tracker.end('success');
+      return;
+    }
 
-  // Announce modal
-  if (customId === 'announce_modal') {
-    await handleAnnounceModal(interaction);
-    return;
+    logger.warn({ customId }, '⚠️ Unhandled modal submit');
+    tracker.end('error');
+  } catch (error) {
+    tracker.end('error');
+    throw error;
   }
-
-  logger.warn({ customId }, '⚠️ Unhandled modal submit');
 }
 
 /* ============================================
@@ -449,9 +515,9 @@ async function handleConfirmSteamLink(
       [interaction.user.id, steam32Id]
     );
 
-    const locale = await loadGuildLocale(interaction);
+    const locale = await resolveLocale(interaction);
     const successMessage =
-      t(locale, 'connect_success') ||
+      i18nService.t(locale, 'connect_success') ||
       `✅ Steam account linked successfully!\n\n🆔 Steam ID: ${steam32Id}\n\n📊 You can now use:\n• Profile - View your stats\n• Match - Analyze your last match\n• Progress - Track your improvement`;
 
     await safeEdit(interaction, {

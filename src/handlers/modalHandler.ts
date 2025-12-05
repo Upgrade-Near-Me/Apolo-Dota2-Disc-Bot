@@ -18,10 +18,8 @@ import {
   PermissionFlagsBits,
 } from 'discord.js';
 
-// @ts-expect-error - JavaScript module
 import pool from '../database/index.js';
-// @ts-expect-error - JavaScript module
-import { t, loadGuildLocale } from '../utils/i18n.js';
+import { tInteraction, resolveLocale } from '../utils/i18n.js';
 
 /**
  * Main modal submission router

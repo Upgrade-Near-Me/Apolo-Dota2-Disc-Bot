@@ -1,9 +1,15 @@
 # 🆕 Features Guide - APOLO Dota 2 Bot
 
-Comprehensive guide to all features in Apolo Dota 2 Bot.
+Comprehensive guide to all features in Apolo Dota 2 Bot (v2.2 - Tier 1 Gamification Complete).
 
 ## Table of Contents
 
+- [🎮 Tier 1 Features (NEW - Phase 13)](#-tier-1-features-new---phase-13)
+  - [IMP Score System](#imp-score-system)
+  - [Match Awards](#match-awards)
+  - [XP & Leveling](#xp--leveling)
+  - [Hero Benchmarks](#hero-benchmarks)
+  - [Admin XP Command](#admin-xp-command)
 - [8 Specialized Channels](#8-specialized-channels)
 - [Team Balancer](#team-balancer)
 - [AI Analysis System](#ai-analysis-system)
@@ -14,6 +20,151 @@ Comprehensive guide to all features in Apolo Dota 2 Bot.
 - [Setup Requirements](#setup-requirements)
 - [Performance](#performance)
 - [Troubleshooting](#troubleshooting)
+
+---
+
+## 🎮 Tier 1 Features (NEW - Phase 13)
+
+**Phase 13 Complete (100%)** - Enterprise-grade gamification system deployed across 4 features:
+
+### IMP Score System
+
+**Overview:** Impact Score (-100 to +100) quantifies match performance with unique BR formula
+
+**Algorithm:**
+
+- **KDA Component** (max ±40): Kills vs Deaths (normalized)
+- **Economy Component** (max ±30): GPM efficiency vs bracket average
+- **Impact Component** (max ±20): Assists + building contribution
+- **Win Bonus**: ±10 for victory/defeat
+- **Result:** -100 (terrible) to +100 (perfect game)
+
+**In Profiles:** Shows avg IMP across last 50 matches (at `/dashboard → Profile`)
+
+**Database:** `match_imp_scores` table (match_id, steam_id, imp_score, created_at)
+
+**Example:**
+
+```text
+Match Result: WIN (5/2/8, 420 GPM, 35min)
+IMP Calculation:
+  KDA: +28 (positive K/D ratio)
+  Economy: +18 (above bracket avg)
+  Impact: +14 (high assist count)
+  Win Bonus: +10
+  TOTAL: +70 IMP
+```
+
+### Match Awards
+
+**Overview:** 10 achievement types auto-detected and awarded after each match analysis
+
+**Award Types:**
+
+1. 🔥 **Godlike Streak** - 5+ consecutive kills without death
+2. 💰 **Flash Farmer** - 600+ GPM (top 5% economy)
+3. 🛡️ **Unkillable** - 0 deaths entire game
+4. 🎯 **Precision Striker** - 70%+ kill participation
+5. 🏆 **Performance Peak** - IMP Score ≥ +60
+6. 🤝 **Team Player** - 15+ assists in one match
+7. 💪 **Carry Dominance** - Outfarm enemy carry by 50%+ GPM
+8. 🎪 **Rampage Master** - 5+ man teamfight kills
+9. ⭐ **Rising Star** - 3 awards in last 5 matches
+10. 🔐 **Lockdown** - 20+ stuns/silences in game
+
+**In Profiles:** Shows recent awards (last 5) + total award count
+
+**Database:** `match_awards` table (match_id, steam_id, award_type, created_at)
+
+**Notifications:** Award emoji + name in match analysis embed
+
+### XP & Leveling
+
+**Overview:** Progressive leveling system with dynamic curve and role-based rewards
+
+**XP Sources:**
+
+- **Match Played** - 100 XP base + IMP bonus (0-50 XP)
+- **Message Sent** - 5 XP per message (max 50/day)
+- **Voice Time** - 10 XP per minute (max 300/day)
+- **Awards Earned** - 25 XP per award (auto-applied)
+- **Admin Grant** - Manual XP via `/xp-admin` command
+
+**Level Formula:** `XP = n² × 100` (n = current level)
+
+**Level Progression:**
+
+```text
+Level 1:  0 → 100 XP
+Level 2:  100 → 500 XP (need 400)
+Level 3:  500 → 1,100 XP (need 600)
+Level 5:  2,500 → 3,900 XP (need 1,400)
+Level 10: 10,000 → 12,100 XP (need 2,000)
+```
+
+**In Profiles:** Shows current level + XP progress bar, next level requirements
+
+**Database:** 
+- `user_xp` table (user_id, current_xp, current_level, total_earned)
+- `xp_events` table (user_id, event_type, amount, source, created_at)
+
+**Admin Command:** `/xp-admin user:@Player reason:top_3_leaderboard amount:500`
+
+### Hero Benchmarks
+
+**Overview:** OpenDota percentile ranking showing how you compare to bracket
+
+**Display Format:**
+```
+📊 Invoker Benchmarks
+
+Your Stats (Immortal)
+  GPM: 385 → Top 12% ⭐
+  XPM: 520 → Top 8% ⭐⭐
+  Win Rate: 58% → Top 5% ⭐⭐⭐
+
+Bracket Average (Immortal)
+  GPM: 340, XPM: 480, WR: 52%
+```
+
+**Percentile Ranking:**
+- Top 1% - ⭐⭐⭐⭐⭐ (Legendary)
+- Top 5% - ⭐⭐⭐⭐ (Elite)
+- Top 10% - ⭐⭐⭐ (Expert)
+- Top 25% - ⭐⭐ (Advanced)
+- Top 50% - ⭐ (Competent)
+- Below 50% - (Standard)
+
+**Caching:** Redis cache 5 minutes per hero (TTL=300s)
+
+**Source:** OpenDota `/heroStats` API (fallback if Stratz unavailable)
+
+**Database:** Cached in Redis, not persisted in PostgreSQL
+
+### Admin XP Command
+
+**Command:** `/xp-admin user:@Player amount:500 reason:top_3_leaderboard`
+
+**Permissions:** Requires `MANAGE_GUILD` (admin only)
+
+**Parameters:**
+- `user` - Discord user to grant XP to
+- `amount` - XP amount (1-10,000)
+- `reason` - Admin note (for logging)
+
+**Response Example:**
+```
+✅ XP Granted
+
+Player: @User#1234
+Amount: 500 XP
+Reason: top_3_leaderboard
+New Level: 15 (2,340/2,600 XP)
+```
+
+**i18n Support:** Full localization en/pt/es
+
+---
 
 ## 8 Specialized Channels
 

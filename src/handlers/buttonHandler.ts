@@ -19,13 +19,159 @@ import {
   ActionRowBuilder,
   ModalActionRowComponentBuilder,
   ChannelType,
+  AttachmentBuilder,
 } from 'discord.js';
 
 import pool from '../database/index.js';
 import * as openDota from '../services/openDotaService.js';
+import * as stratzService from '../services/stratzService.js';
+import { calculateImpScore, saveImpScore } from '../services/impScoreService.js';
+import { calculateAwards } from '../services/awardService.js';
+import { grantMatchXp } from '../services/levelingService.js';
+import { getBenchmarksForLastMatch } from '../services/benchmarkService.js';
+import { generateMatchCard } from '../utils/imageGenerator.js';
+import { generateWardHeatmap } from '../utils/heatmap.js';
+import { generateProgressChart } from '../utils/chartGenerator.js';
 import { dmOrEphemeral } from '../utils/dm.js';
 import { handleError, safeReply } from '../utils/errorHandler.js';
 import logger from '../utils/logger.js';
+import { tInteraction } from '../utils/i18n.js';
+
+type LoggerLike = {
+  error: (obj: unknown, msg?: string) => void;
+  warn: (obj: unknown, msg?: string) => void;
+};
+const log = logger as LoggerLike;
+
+function formatMinutes(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.max(0, seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+// ============================================
+// 🎨 MODERN UI/UX SYSTEM (MEE6/Arcane-inspired)
+// ============================================
+
+/**
+ * Get dynamic color based on performance (5 tiers)
+ */
+function getPerformanceColor(value: number, thresholds: { excellent: number; good: number; average: number; poor: number }): number {
+  if (value >= thresholds.excellent) return 0x2ECC71; // Green - Excellent
+  if (value >= thresholds.good) return 0x3498DB; // Blue - Good
+  if (value >= thresholds.average) return 0xF39C12; // Orange - Average
+  if (value >= thresholds.poor) return 0xE74C3C; // Red - Poor
+  return 0x95A5A6; // Gray - Very Poor
+}
+
+/**
+ * Create colored progress bar with emoji blocks (12 blocks)
+ */
+function createProgressBar(value: number, max: number, width: number = 12): string {
+  const percentage = Math.min(100, Math.max(0, (value / max) * 100));
+  const filled = Math.round((percentage / 100) * width);
+  const empty = width - filled;
+  
+  let bar = '';
+  for (let i = 0; i < filled; i++) {
+    if (percentage >= 75) bar += '🟩'; // Green
+    else if (percentage >= 50) bar += '🟨'; // Yellow
+    else if (percentage >= 25) bar += '🟧'; // Orange
+    else bar += '🟥'; // Red
+  }
+  for (let i = 0; i < empty; i++) {
+    bar += '⬛'; // Black
+  }
+  
+  return `${bar} ${percentage.toFixed(1)}%`;
+}
+
+/**
+ * Get performance emoji based on value
+ */
+function getPerformanceEmoji(winrate: number): string {
+  if (winrate >= 60) return '🔥'; // On fire
+  if (winrate >= 55) return '⚡'; // Great
+  if (winrate >= 50) return '✨'; // Good
+  if (winrate >= 45) return '💫'; // Average
+  return '🌟'; // Needs work
+}
+
+/**
+ * Format number with K notation
+ */
+function formatNumber(num: number): string {
+  if (num >= 1000) {
+    return `${(num / 1000).toFixed(1)}K`;
+  }
+  return num.toString();
+}
+
+/**
+ * Get rank badge with emoji and bold text
+ */
+function getRankBadge(rank: string): string {
+  const ranks: Record<string, string> = {
+    'Herald': '🛡️ **Herald**',
+    'Guardian': '🗡️ **Guardian**',
+    'Crusader': '⚔️ **Crusader**',
+    'Archon': '🏹 **Archon**',
+    'Legend': '🔱 **Legend**',
+    'Ancient': '👑 **Ancient**',
+    'Divine': '💎 **Divine**',
+    'Immortal': '🏆 **Immortal**'
+  };
+  return ranks[rank] || `⭐ **${rank}**`;
+}
+
+/**
+ * Get hero medal emoji (top 5)
+ */
+function getHeroMedal(index: number): string {
+  const medals = ['🥇', '🥈', '🥉', '4⃣', '5⃣'];
+  return medals[index] || '▪️';
+}
+
+/**
+ * Create mini progress bar for hero stats (5 blocks)
+ */
+function createMiniBar(winrate: number): string {
+  const filled = Math.round((winrate / 100) * 5);
+  const empty = 5 - filled;
+  let bar = '';
+  
+  for (let i = 0; i < filled; i++) {
+    if (winrate >= 60) bar += '🟢';
+    else if (winrate >= 50) bar += '🟡';
+    else bar += '🔴';
+  }
+  for (let i = 0; i < empty; i++) {
+    bar += '⚫';
+  }
+  
+  return bar;
+}
+
+/**
+ * Format stat with icon and color
+ */
+function formatStat(label: string, value: string | number, emoji: string): string {
+  return `${emoji} **${label}**: ${value}`;
+}
+
+/**
+ * Create section header
+ */
+function sectionHeader(title: string): string {
+  return `## ${title}`;
+}
+
+/**
+ * Create inline stat card (3 columns)
+ */
+function inlineStatCard(items: Array<{ label: string; value: string | number; emoji: string }>): string {
+  return items.map(item => `${item.emoji} **${item.label}**\n${item.value}`).join('\n\n');
+}
 
 /**
  * Main button interaction router
@@ -160,6 +306,35 @@ export async function handleButtonInteraction(interaction: ButtonInteraction): P
   
   if (buttonId === 'dashboard_match_history') {
     await handleMatchHistory(interaction);
+    return;
+  }
+
+  if (buttonId === 'dashboard_heatmap') {
+    await handleDashboardHeatmap(interaction);
+    return;
+  }
+
+  // ============================================
+  // F. CORE FEATURES (Match, Profile, Progress, Leaderboard)
+  // ============================================
+  
+  if (buttonId === 'dashboard_match') {
+    await handleDashboardMatch(interaction);
+    return;
+  }
+
+  if (buttonId === 'dashboard_profile') {
+    await handleDashboardProfile(interaction);
+    return;
+  }
+
+  if (buttonId === 'dashboard_progress') {
+    await handleDashboardProgress(interaction);
+    return;
+  }
+
+  if (buttonId === 'dashboard_leaderboard') {
+    await handleDashboardLeaderboard(interaction);
     return;
   }
 
@@ -640,40 +815,65 @@ async function handleAIPerformance(interaction: ButtonInteraction): Promise<void
     // Generate performance grade (S, A, B, C, D, F)
     const grade = calculatePerformanceGrade(metrics);
     
+    // Dynamic color based on grade
+    const gradeColors: Record<string, number> = {
+      'S': 0x2ECC71, // Green
+      'A': 0x3498DB, // Blue
+      'B': 0xF39C12, // Orange
+      'C': 0xE74C3C, // Red
+      'D': 0x95A5A6, // Gray
+      'F': 0x7F8C8D  // Dark Gray
+    };
+    
     const embed = new EmbedBuilder()
-      .setColor(grade.color)
-      .setTitle(`📊 Performance Score: ${grade.letter}`)
-      .setDescription(`**Análise das últimas ${matches.length} partidas**\n\n${grade.description}`)
-      .addFields(
+      .setColor(gradeColors[grade.letter] || 0x95A5A6)
+      .setAuthor({ 
+        name: `${interaction.user.username} • AI Performance Analysis`,
+        iconURL: interaction.user.displayAvatarURL()
+      })
+      .setDescription(`${grade.letter === 'S' ? '🔥' : grade.letter === 'A' ? '⚡' : grade.letter === 'B' ? '✨' : '💫'} **Grade: ${grade.letter}** • ${grade.description}`)
+      .addFields([
+        { name: `\\n${sectionHeader('🎯 Estatísticas Gerais')}`, value: '** **', inline: false },
         { 
-          name: '🎯 Estatísticas Gerais', 
-          value: `**Win Rate:** ${metrics.winRate.toFixed(1)}% (${metrics.wins}W/${metrics.losses}L)\n**KDA:** ${metrics.avgKDA.toFixed(2)}\n**Score:** ${metrics.performanceScore.toFixed(0)}/100`,
+          name: '🏆 Win Rate', 
+          value: `**${metrics.winRate.toFixed(1)}%**\\n${createProgressBar(metrics.winRate, 100, 10)}`, 
           inline: true 
         },
         { 
-          name: '💰 Economia', 
-          value: `**GPM Médio:** ${metrics.avgGPM.toFixed(0)}\n**XPM Médio:** ${metrics.avgXPM.toFixed(0)}\n**Farm Score:** ${metrics.farmScore}/10`,
+          name: '⚔️ KDA', 
+          value: `**${metrics.avgKDA.toFixed(2)}**\\n${getPerformanceEmoji(metrics.avgKDA * 20)}`, 
           inline: true 
         },
         { 
-          name: '⚔️ Combate', 
-          value: `**Kills/Jogo:** ${metrics.avgKills.toFixed(1)}\n**Deaths/Jogo:** ${metrics.avgDeaths.toFixed(1)}\n**Assists/Jogo:** ${metrics.avgAssists.toFixed(1)}`,
+          name: '📊 Score', 
+          value: `**${metrics.performanceScore.toFixed(0)}/100**\\n${createProgressBar(metrics.performanceScore, 100, 10)}`, 
           inline: true 
         },
+        
+        { name: `\\n${sectionHeader('💰 Economia & Farm')}`, value: '** **', inline: false },
+        { name: '💰 GPM', value: `**${metrics.avgGPM.toFixed(0)}**`, inline: true },
+        { name: '📈 XPM', value: `**${metrics.avgXPM.toFixed(0)}**`, inline: true },
+        { name: '🌾 Farm Score', value: `**${metrics.farmScore}/10**`, inline: true },
+        
+        { name: `\\n${sectionHeader('⚔️ Combate')}`, value: '** **', inline: false },
+        { name: '🗡️ Kills/Game', value: `**${metrics.avgKills.toFixed(1)}**`, inline: true },
+        { name: '💀 Deaths/Game', value: `**${metrics.avgDeaths.toFixed(1)}**`, inline: true },
+        { name: '🤝 Assists/Game', value: `**${metrics.avgAssists.toFixed(1)}**`, inline: true },
+        
         {
-          name: '📈 Tendência',
+          name: '\\n📈 Tendência Atual',
           value: metrics.streak.count >= 3 
-            ? `${metrics.streak.type === 'win' ? '🔥' : '❄️'} **${metrics.streak.count} ${metrics.streak.type === 'win' ? 'vitórias' : 'derrotas'} seguidas**`
-            : '📊 Desempenho variado',
+            ? `${metrics.streak.type === 'win' ? '🔥 **ON FIRE!**' : '❄️ **COLD STREAK**'}\\n${metrics.streak.count} ${metrics.streak.type === 'win' ? 'vitórias' : 'derrotas'} seguidas`
+            : '> 📊 Desempenho variado - Continue jogando!',
           inline: false
         },
         {
-          name: '🎓 Próximo Objetivo',
-          value: grade.nextGoal,
+          name: '🎯 Próximo Objetivo',
+          value: `> ${grade.nextGoal}`,
           inline: false
         }
-      )
-      .setFooter({ text: `AI Analyst • Última atualização: ${new Date().toLocaleString('pt-BR')}` })
+      ])
+      .setFooter({ text: `Análise de ${matches.length} partidas • AI-Powered` })
       .setTimestamp();
 
     await dmOrEphemeral(interaction, { embeds: [embed] }, '📊 Análise de Performance enviada na DM!');
@@ -795,20 +995,20 @@ async function handleAIWeaknesses(interaction: ButtonInteraction): Promise<void>
         {
           name: '🚨 Problemas Críticos',
           value: weaknesses.critical.length > 0 
-            ? weaknesses.critical.map(w => `• ${w}`).join('\n')
+            ? weaknesses.critical.map((w: string) => `• ${w}`).join('\n')
             : '✅ Nenhum problema crítico!',
           inline: false
         },
         {
           name: '⚠️ Pontos de Atenção',
           value: weaknesses.moderate.length > 0
-            ? weaknesses.moderate.map(w => `• ${w}`).join('\n')
+            ? weaknesses.moderate.map((w: string) => `• ${w}`).join('\n')
             : '✅ Desempenho estável!',
           inline: false
         },
         {
           name: '💡 Recomendações Prioritárias',
-          value: weaknesses.recommendations.slice(0, 3).map((r, i) => `${i + 1}. ${r}`).join('\n'),
+          value: weaknesses.recommendations.slice(0, 3).map((r: string, i: number) => `${i + 1}. ${r}`).join('\n'),
           inline: false
         }
       )
@@ -863,12 +1063,12 @@ async function handleAIStrengths(interaction: ButtonInteraction): Promise<void> 
         },
         {
           name: '✅ Fazendo Bem',
-          value: strengths.goodAreas.map(s => `• ${s}`).join('\n'),
+          value: strengths.goodAreas.map((s: string) => `• ${s}`).join('\n'),
           inline: false
         },
         {
           name: '🎯 Como Capitalizar',
-          value: strengths.howToLeverage.map((h, i) => `${i + 1}. ${h}`).join('\n'),
+          value: strengths.howToLeverage.map((h: string, i: number) => `${i + 1}. ${h}`).join('\n'),
           inline: false
         }
       )
@@ -918,14 +1118,14 @@ async function handleAIHeroes(interaction: ButtonInteraction): Promise<void> {
       .addFields(
         {
           name: '⭐ Melhores Heróis (Maior WR)',
-          value: heroAnalysis.best.map(h => 
+          value: heroAnalysis.best.map((h: any) => 
             `• **${h.name}** - ${h.winRate.toFixed(0)}% WR (${h.wins}W/${h.losses}L) - KDA ${h.avgKDA.toFixed(2)}`
           ).join('\n') || 'Jogue mais partidas!',
           inline: false
         },
         {
           name: '⚠️ Heróis Problemáticos',
-          value: heroAnalysis.worst.map(h => 
+          value: heroAnalysis.worst.map((h: any) => 
             `• **${h.name}** - ${h.winRate.toFixed(0)}% WR (${h.wins}W/${h.losses}L) - KDA ${h.avgKDA.toFixed(2)}`
           ).join('\n') || 'Nenhum herói problemático!',
           inline: false
@@ -995,17 +1195,17 @@ async function handleAIReport(interaction: ButtonInteraction): Promise<void> {
         },
         {
           name: '💪 Principais Pontos Fortes',
-          value: strengths.goodAreas.slice(0, 3).map(s => `✅ ${s}`).join('\n'),
+          value: strengths.goodAreas.slice(0, 3).map((s: string) => `✅ ${s}`).join('\n'),
           inline: true
         },
         {
           name: '⚠️ Áreas de Melhoria',
-          value: weaknesses.critical.concat(weaknesses.moderate).slice(0, 3).map(w => `❌ ${w}`).join('\n') || '✅ Sem problemas!',
+          value: weaknesses.critical.concat(weaknesses.moderate).slice(0, 3).map((w: string) => `❌ ${w}`).join('\n') || '✅ Sem problemas!',
           inline: true
         },
         {
           name: '🎯 Top 3 Heróis',
-          value: profile.topHeroes.slice(0, 3).map(h => 
+          value: profile.topHeroes.slice(0, 3).map((h: any) => 
             `• **${h.name}** (${h.matches} jogos - ${h.winRate}% WR)`
           ).join('\n'),
           inline: false
@@ -1204,7 +1404,7 @@ async function handleAITip(interaction: ButtonInteraction): Promise<void> {
  * AI Analysis Engine - Analyzes player performance and provides insights
  */
 function analyzePlayerPerformance(matches: any[]): {
-  color: string;
+  color: number;
   mainInsight: string;
   stats: string;
   warnings: string;
@@ -1230,17 +1430,17 @@ function analyzePlayerPerformance(matches: any[]): {
   const goodGames = matches.filter(m => (m.kills + m.assists) / Math.max(m.deaths, 1) > 3).length;
   
   // Determine performance tier
-  let color = '#95a5a6'; // Gray
+  let color: string | number = 0x95a5a6; // Gray (as number)
   let performanceTier = 'Iniciante';
   
   if (avgGPM > 600 && avgKDA > 3) {
-    color = '#f1c40f'; // Gold
+    color = 0xf1c40f; // Gold
     performanceTier = 'Profissional';
   } else if (avgGPM > 500 && avgKDA > 2.5) {
-    color = '#9b59b6'; // Purple
+    color = 0x9b59b6; // Purple
     performanceTier = 'Avançado';
   } else if (avgGPM > 400 && avgKDA > 2) {
-    color = '#3498db'; // Blue
+    color = 0x3498db; // Blue
     performanceTier = 'Intermediário';
   }
   
@@ -1689,4 +1889,962 @@ async function handleMatchHistory(interaction: ButtonInteraction): Promise<void>
         .setFooter({ text: 'Match History • Coming Soon' })
     ],
   });
+}
+
+/* ============================================
+ * F. CORE FEATURES HANDLERS
+ * ============================================ */
+
+async function handleDashboardHeatmap(interaction: ButtonInteraction): Promise<void> {
+  await interaction.deferReply({ ephemeral: true });
+
+  try {
+    const userResult = await pool.query(
+      'SELECT steam_id FROM users WHERE discord_id = $1',
+      [interaction.user.id]
+    );
+
+    if (!userResult || userResult.rows.length === 0) {
+      await interaction.editReply({ content: await tInteraction(interaction as any, 'error_no_steam') });
+      return;
+    }
+
+    const steamId = userResult.rows[0].steam_id;
+    const matchData = await stratzService.getLastMatch(steamId);
+
+    if (!matchData) {
+      await interaction.editReply({ content: await tInteraction(interaction as any, 'error_no_matches') });
+      return;
+    }
+
+    const vision = await openDota.getMatchVision(matchData.matchId);
+    if (!vision || (vision.observers.length === 0 && vision.sentries.length === 0)) {
+      await interaction.editReply({ content: await tInteraction(interaction as any, 'error_heatmap_no_data') });
+      return;
+    }
+
+    const title = await tInteraction(interaction as any, 'heatmap_title');
+    const description = await tInteraction(interaction as any, 'heatmap_description', { hero: matchData.heroName });
+    const observerLabel = await tInteraction(interaction as any, 'heatmap_observer_label');
+    const sentryLabel = await tInteraction(interaction as any, 'heatmap_sentry_label');
+    const matchLabel = await tInteraction(interaction as any, 'heatmap_match_label', { matchId: String(matchData.matchId) });
+    const durationSeconds = vision.duration || matchData.duration || 0;
+
+    const heatmapBuffer = await generateWardHeatmap(
+      {
+        matchId: matchData.matchId,
+        durationSeconds,
+        observers: vision.observers,
+        sentries: vision.sentries,
+      },
+      {
+        title,
+        matchLabel,
+        observerLabel,
+        sentryLabel,
+      }
+    );
+
+    const embed = new EmbedBuilder()
+      .setColor('#1abc9c')
+      .setTitle(title)
+      .setDescription(`${description}\n${matchLabel}`)
+      .addFields(
+        { name: observerLabel, value: vision.observers.length.toString(), inline: true },
+        { name: sentryLabel, value: vision.sentries.length.toString(), inline: true },
+        { name: await tInteraction(interaction as any, 'match_duration'), value: formatMinutes(durationSeconds), inline: true }
+      )
+      .setImage('attachment://heatmap.png')
+      .setFooter({ text: `Match ID: ${matchData.matchId} • OpenDota` })
+      .setTimestamp(matchData.playedAt);
+
+    const attachment = new AttachmentBuilder(heatmapBuffer, { name: 'heatmap.png' });
+
+    await interaction.editReply({
+      embeds: [embed],
+      files: [attachment],
+    });
+  } catch (error) {
+    log.error({ error, context: 'handleDashboardHeatmap', userId: interaction.user.id }, 'Error generating ward heatmap');
+    const errorResponse = handleError(error, { context: 'handleDashboardHeatmap', userId: interaction.user.id, operation: 'heatmap' });
+    await interaction.editReply({ content: `❌ ${errorResponse.message}` });
+  }
+}
+
+/**
+ * Feature 1: Match Analysis
+ * Fetches last match from Stratz, generates card, saves to database
+ */
+async function handleDashboardMatch(interaction: ButtonInteraction): Promise<void> {
+  await interaction.deferReply({ ephemeral: true });
+
+  try {
+    // 1. Check if user has Steam linked
+    const userResult = await pool.query(
+      'SELECT steam_id FROM users WHERE discord_id = $1',
+      [interaction.user.id]
+    );
+
+    if (!userResult || userResult.rows.length === 0) {
+      await interaction.editReply({
+        content: '❌ **Conta Steam não vinculada!**\n\nUse o botão `🔗 Conectar Steam` no dashboard principal primeiro.',
+      });
+      return;
+    }
+
+    const steamId = userResult.rows[0].steam_id;
+
+    // 2. Fetch last match from Stratz
+    const matchData = await stratzService.getLastMatch(steamId);
+
+    if (!matchData) {
+      await interaction.editReply({
+        content: '❌ **Nenhuma partida encontrada!**\n\nVerifique se seu perfil Steam está público e se você jogou recentemente.',
+      });
+      return;
+    }
+
+    // 3. Transform Stratz data to MatchData interface for image generation
+    const imageData = {
+      result: matchData.result, // Already 'WIN' or 'LOSS'
+      heroName: matchData.heroName,
+      kills: matchData.kills,
+      deaths: matchData.deaths,
+      assists: matchData.assists,
+      gpm: matchData.gpm,
+      xpm: matchData.xpm,
+      netWorth: matchData.netWorth,
+      duration: Math.floor(matchData.duration / 60), // Convert seconds to minutes
+    };
+
+    // 3.1 Calculate IMP score, awards, XP, and benchmarks
+    const isWin = matchData.result === 'WIN';
+    const impStats = {
+      matchId: matchData.matchId,
+      steamId,
+      discordId: interaction.user.id,
+      heroId: matchData.heroId,
+      gpm: matchData.gpm,
+      xpm: matchData.xpm,
+      kills: matchData.kills,
+      deaths: matchData.deaths,
+      assists: matchData.assists,
+      netWorth: matchData.netWorth,
+      duration: matchData.duration,
+      victory: isWin,
+    };
+
+    const impResult = calculateImpScore(impStats);
+    const awardsResult = calculateAwards({
+      kills: matchData.kills,
+      deaths: matchData.deaths,
+      assists: matchData.assists,
+      gpm: matchData.gpm,
+      xpm: matchData.xpm,
+      netWorth: matchData.netWorth,
+      duration: matchData.duration,
+      victory: isWin,
+    });
+
+    const levelState = await grantMatchXp(interaction.user.id, matchData.duration);
+    const benchmarks = await getBenchmarksForLastMatch(steamId, interaction as any);
+
+    // 4. Generate match card image
+    const imageBuffer = await generateMatchCard(imageData);
+
+    // 5. Calculate KDA and performance grade
+    const kda = matchData.deaths === 0 ? matchData.kills + matchData.assists : (matchData.kills + matchData.assists) / matchData.deaths;
+    const kdaFormatted = kda.toFixed(2);
+
+    let grade = 'F';
+    if (kda >= 10) grade = 'S';
+    else if (kda >= 6) grade = 'A';
+    else if (kda >= 4) grade = 'B';
+    else if (kda >= 2) grade = 'C';
+    else if (kda >= 1) grade = 'D';
+
+    // 6. Create MODERN Discord embed (MEE6/Arcane-inspired)
+    const matchXpGain = 50 + Math.round((matchData.duration / 60) * 5);
+    const impLabel = await tInteraction(interaction as any, 'imp_score_label');
+    const xpLabel = await tInteraction(interaction as any, 'xp_gained', { xp: matchXpGain, level: levelState.level });
+    const awardsLabel = await tInteraction(interaction as any, 'awards_title');
+    const noAwardsLabel = await tInteraction(interaction as any, 'awards_none');
+
+    // Dynamic color based on performance
+    const winrate = isWin ? 100 : 0;
+    const embedColor = getPerformanceColor(kda, { excellent: 6, good: 4, average: 2, poor: 1 });
+
+    // Awards display with emojis
+    const awardsDisplay = awardsResult.keys.length > 0
+      ? (await Promise.all(
+          awardsResult.keys.map(async (k) => {
+            const txt = await tInteraction(interaction as any, `award_${k}`);
+            const emoji = k === 'godlike_streak' ? '🔥' : k === 'flash_farmer' ? '💰' : k === 'unkillable' ? '🛡️' : '🎖️';
+            return `${emoji} ${txt}`;
+          })
+        )).join('\n')
+      : `> ${noAwardsLabel}`;
+
+    // Benchmark with stars
+    let benchmarkText = '';
+    if (benchmarks?.entries?.length) {
+      const entry = benchmarks.entries[0];
+      if (entry && entry.benchmarks?.percentile?.percentile !== undefined) {
+        const percent = entry.benchmarks.percentile.percentile;
+        let stars = '⭐';
+        if (percent <= 5) stars = '⭐⭐⭐⭐⭐';
+        else if (percent <= 10) stars = '⭐⭐⭐⭐';
+        else if (percent <= 25) stars = '⭐⭐⭐';
+        else if (percent <= 50) stars = '⭐⭐';
+        
+        benchmarkText = `${stars} Top ${percent}% ${entry.heroName}`;
+      }
+    }
+
+    // Performance emoji
+    const perfEmoji = grade === 'S' ? '🔥' : grade === 'A' ? '⚡' : grade === 'B' ? '✨' : grade === 'C' ? '💫' : '🌟';
+
+    const embed = new EmbedBuilder()
+      .setColor(embedColor)
+      .setAuthor({ 
+        name: `${matchData.heroName} • ${isWin ? 'VITÓRIA ✅' : 'DERROTA ❌'}`,
+        iconURL: interaction.user.displayAvatarURL()
+      })
+      .setDescription(`${perfEmoji} **Performance Grade: ${grade}** • KDA: **${kdaFormatted}**\\n${isWin ? '🏆' : '💔'} ${isWin ? 'Match vencida com sucesso!' : 'Continue treinando para melhorar!'}`)
+      .addFields([
+        // Combat stats (3 columns)
+        { name: '⚔️ Kills', value: `**${matchData.kills}**`, inline: true },
+        { name: '💀 Deaths', value: `**${matchData.deaths}**`, inline: true },
+        { name: '🤝 Assists', value: `**${matchData.assists}**`, inline: true },
+        
+        // Economy stats (3 columns)
+        { name: '💰 GPM', value: `**${matchData.gpm}**`, inline: true },
+        { name: '📈 XPM', value: `**${matchData.xpm}**`, inline: true },
+        { name: '💎 Net Worth', value: `**${formatNumber(matchData.netWorth)}**`, inline: true },
+        
+        // Match info (3 columns)
+        { name: '⏱️ Duração', value: `**${Math.floor(matchData.duration / 60)} min**`, inline: true },
+        { name: '🧠 IMP Score', value: `**${impResult.score >= 0 ? '+' : ''}${impResult.score.toFixed(0)}**`, inline: true },
+        { name: '⭐ XP Ganho', value: `**+${matchXpGain}** XP`, inline: true },
+      ])
+      .setImage('attachment://match.png')
+      .setFooter({ text: `Match ID: ${matchData.matchId} • Level ${levelState.level}` })
+      .setTimestamp(matchData.playedAt);
+
+    // Add awards section if any
+    if (awardsResult.keys.length > 0) {
+      embed.addFields([
+        { name: '\\n🎖️ Conquistas Desbloqueadas', value: awardsDisplay, inline: false }
+      ]);
+    }
+
+    // Add benchmark if available
+    if (benchmarkText) {
+      embed.addFields([
+        { name: '🏅 Ranking', value: benchmarkText, inline: false }
+      ]);
+    }
+
+    // 7. Save match to database (cache for future queries)
+    try {
+      await pool.query(
+        `INSERT INTO matches (match_id, discord_id, hero_id, kills, deaths, assists, gpm, xpm, net_worth, result, played_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+         ON CONFLICT (match_id) DO NOTHING`,
+        [
+          matchData.matchId,
+          interaction.user.id,
+          matchData.heroId,
+          matchData.kills,
+          matchData.deaths,
+          matchData.assists,
+          matchData.gpm,
+          matchData.xpm,
+          matchData.netWorth,
+          isWin,
+          matchData.playedAt
+        ]
+      );
+
+      await saveImpScore(impStats as any, impResult);
+
+      if (awardsResult.keys.length > 0) {
+        await pool.query(
+          `INSERT INTO match_awards (match_id, discord_id, steam_id, award_keys)
+           VALUES ($1, $2, $3, $4)
+           ON CONFLICT (match_id, steam_id) DO UPDATE SET award_keys = EXCLUDED.award_keys`,
+          [matchData.matchId, interaction.user.id, steamId, awardsResult.keys]
+        );
+      }
+    } catch (dbError) {
+      log.error({ error: dbError, context: 'handleDashboardMatch', operation: 'save_match' }, 'Failed to save match to database');
+      // Continue anyway - user still gets the result
+    }
+
+    // 8. Send response with image attachment
+    const attachment = new AttachmentBuilder(imageBuffer, { name: 'match.png' });
+    
+    await interaction.editReply({
+      embeds: [embed],
+      files: [attachment],
+    });
+
+  } catch (error) {
+    log.error({ error, context: 'handleDashboardMatch', userId: interaction.user.id }, 'Error in handleDashboardMatch');
+    const errorResponse = handleError(error, { context: 'handleDashboardMatch', userId: interaction.user.id, operation: 'fetch_match' });
+    await interaction.editReply({ content: `❌ ${errorResponse.message}` });
+  }
+}
+
+/**
+ * Feature 2: Player Profile
+ * Shows comprehensive player statistics
+ */
+async function handleDashboardProfile(interaction: ButtonInteraction): Promise<void> {
+  await interaction.deferReply({ ephemeral: true });
+
+  try {
+    console.log(`[PROFILE] Starting profile fetch for user: ${interaction.user.tag}`);
+    
+    // 1. Check if user has Steam linked
+    const userResult = await pool.query(
+      'SELECT steam_id FROM users WHERE discord_id = $1',
+      [interaction.user.id]
+    );
+
+    if (!userResult || userResult.rows.length === 0) {
+      console.log(`[PROFILE] No Steam account linked for ${interaction.user.tag}`);
+      await interaction.editReply({
+        content: '❌ **Conta Steam não vinculada!**\n\nUse o botão `🔗 Conectar Steam` no dashboard principal primeiro.',
+      });
+      return;
+    }
+
+    const steamId = userResult.rows[0].steam_id;
+    console.log(`[PROFILE] Found Steam ID: ${steamId}`);
+
+    // 2. Fetch player profile from Stratz
+    console.log(`[PROFILE] Fetching profile from Stratz...`);
+    const profile = await stratzService.getPlayerProfile(steamId);
+    console.log(`[PROFILE] Profile result:`, profile ? `${profile.name} - ${profile.totalMatches} matches` : 'null');
+
+    if (!profile) {
+      console.log(`[PROFILE] Profile not found for Steam ID: ${steamId}`);
+      await interaction.editReply({
+        content: '❌ **Perfil não encontrado!**\n\nVerifique se seu perfil Steam está público.',
+      });
+      return;
+    }
+
+    // 3. Fetch XP/Level data
+    const xpResult = await pool.query(
+      'SELECT total_xp, current_level FROM user_xp WHERE discord_id = $1',
+      [interaction.user.id]
+    );
+
+    // 4. Fetch average IMP Score
+    const impResult = await pool.query(
+      `SELECT ROUND(AVG(imp_score), 1) as avg_imp, COUNT(*) as match_count
+       FROM match_imp_scores
+       WHERE steam_id = $1`,
+      [steamId]
+    );
+
+    // 5. Fetch recent awards
+    const awardsResult = await pool.query(
+      `SELECT award_keys, created_at
+       FROM match_awards
+       WHERE steam_id = $1
+       ORDER BY created_at DESC
+       LIMIT 5`,
+      [steamId]
+    );
+
+    // 6. Count total awards
+    const totalAwardsResult = await pool.query(
+      `SELECT SUM(CARDINALITY(award_keys)) as total_count
+       FROM match_awards
+       WHERE steam_id = $1`,
+      [steamId]
+    );
+
+    // 7. Calculate statistics
+    const totalMatches = profile.totalMatches;
+    const winRate = profile.winRate.toFixed ? profile.winRate.toFixed(1) : Number(profile.winRate).toFixed(1);
+    const winRateNum = parseFloat(winRate);
+    
+    const xpData = xpResult.rows[0];
+    const impData = impResult.rows[0];
+    const totalAwardsCount = totalAwardsResult.rows[0]?.total_count || 0;
+
+    // Helper: Create advanced progress bar (MEE6/Arcane style)
+    const createProgressBar = (percentage: number, total = 12): string => {
+      const filled = Math.round((percentage / 100) * total);
+      const empty = total - filled;
+      
+      // Color-coded progress blocks
+      let color = '🟩'; // Green for good
+      if (percentage < 45) color = '🟥'; // Red for bad
+      else if (percentage < 50) color = '🟧'; // Orange for average
+      else if (percentage < 55) color = '🟨'; // Yellow for decent
+      
+      const bar = color.repeat(filled) + '⬜'.repeat(empty);
+      return `${bar}\n**${percentage.toFixed(1)}%**`;
+    };
+
+    // Helper: Get rank badge with color
+    const getRankBadge = (rank: string | undefined): string => {
+      if (!rank) return '🔰 **Unranked**';
+      const badges: Record<string, string> = {
+        'Herald': '🥉 **Herald**',
+        'Guardian': '🥈 **Guardian**',
+        'Crusader': '⚔️ **Crusader**',
+        'Archon': '🛡️ **Archon**',
+        'Legend': '⭐ **Legend**',
+        'Ancient': '💎 **Ancient**',
+        'Divine': '👑 **Divine**',
+        'Immortal': '🏆 **Immortal**'
+      };
+      for (const [key, badge] of Object.entries(badges)) {
+        if (rank.includes(key)) return badge;
+      }
+      return `📊 **${rank}**`;
+    };
+
+    // Helper: Format large numbers (1234 → 1.2K)
+    const formatNumber = (num: number): string => {
+      if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
+      return num.toString();
+    };
+
+    // Helper: Get performance emoji
+    const getPerformanceEmoji = (winRate: number): string => {
+      if (winRate >= 60) return '🔥';
+      if (winRate >= 55) return '⚡';
+      if (winRate >= 50) return '✨';
+      if (winRate >= 45) return '💫';
+      return '🌟';
+    };
+
+    // 8. Create modern profile embed
+    const profileTitle = await tInteraction(interaction, 'profile_title', { name: profile.name });
+    const overviewLabel = await tInteraction(interaction, 'profile_overview');
+    const totalLabel = await tInteraction(interaction, 'profile_matches');
+    const winsLabel = await tInteraction(interaction, 'profile_wins');
+    const lossesLabel = await tInteraction(interaction, 'profile_losses');
+    const winrateLabel = await tInteraction(interaction, 'profile_winrate');
+    const rankLabel = await tInteraction(interaction, 'profile_rank');
+
+    const rankDisplay = getRankBadge(profile.rank);
+    const performanceEmoji = getPerformanceEmoji(winRateNum);
+    const winrateBar = createProgressBar(winRateNum);
+
+    // Dynamic color based on overall performance
+    const embedColor = winRateNum >= 55 ? 0x2ECC71 : // Green
+                       winRateNum >= 50 ? 0x3498DB : // Blue
+                       winRateNum >= 45 ? 0xF39C12 : // Orange
+                       0xE74C3C; // Red
+
+    const embed = new EmbedBuilder()
+      .setColor(embedColor)
+      .setAuthor({ 
+        name: `${profile.name || 'Player'} • ${rankDisplay}`,
+        iconURL: profile.avatar || undefined
+      })
+      .setThumbnail(profile.avatar || '')
+      .setDescription(
+        `> ${performanceEmoji} **Performance Overview**\n` +
+        `> \`${totalMatches}\` matches • \`${winRateNum.toFixed(1)}%\` win rate\n` +
+        `> Steam ID: \`${steamId}\`\n\u200B`
+      )
+      .addFields(
+        // Match Statistics (inline 3-column)
+        { 
+          name: '📊 **Total**', 
+          value: `\`\`\`\n${formatNumber(totalMatches)}\n\`\`\``, 
+          inline: true 
+        },
+        { 
+          name: '✅ **Wins**', 
+          value: `\`\`\`\n${formatNumber(profile.wins)}\n\`\`\``, 
+          inline: true 
+        },
+        { 
+          name: '❌ **Losses**', 
+          value: `\`\`\`\n${formatNumber(profile.losses)}\n\`\`\``, 
+          inline: true 
+        },
+        // Win Rate Progress Bar (full width)
+        { 
+          name: '\u200B', 
+          value: `### 🎯 Win Rate\n${winrateBar}`, 
+          inline: false 
+        }
+      );
+
+    // 9. Performance Metrics - Modern inline layout
+    embed.addFields({ 
+      name: '\u200B', 
+      value: '## 📈 Performance Metrics', 
+      inline: false 
+    });
+
+    // Economy Stats (GPM/XPM)
+    if (profile.avgGpm || profile.avgXpm) {
+      const gpmValue = profile.avgGpm ? `\`${profile.avgGpm}\` 💰` : '\`N/A\`';
+      const xpmValue = profile.avgXpm ? `\`${profile.avgXpm}\` 📊` : '\`N/A\`';
+      
+      embed.addFields(
+        { name: '💰 **Avg GPM**', value: gpmValue, inline: true },
+        { name: '📊 **Avg XPM**', value: xpmValue, inline: true },
+        { name: '\u200B', value: '\u200B', inline: true }
+      );
+    }
+
+    // Gamification Stats Row
+    const gamificationFields = [];
+    
+    // XP/Level
+    if (xpData) {
+      const levelIcon = xpData.current_level >= 50 ? '🌟' : xpData.current_level >= 25 ? '⭐' : '✨';
+      gamificationFields.push({
+        name: `${levelIcon} **Level**`,
+        value: `\`${xpData.current_level}\`\n*${formatNumber(xpData.total_xp)} XP*`,
+        inline: true
+      });
+    }
+
+    // IMP Score
+    if (impData && impData.match_count > 0) {
+      const impScore = parseFloat(impData.avg_imp);
+      const impEmoji = impScore >= 50 ? '🔥' : impScore >= 30 ? '⚡' : impScore >= 0 ? '✨' : '❄️';
+      const impColor = impScore >= 50 ? '+' : impScore >= 0 ? '' : '';
+      gamificationFields.push({
+        name: `${impEmoji} **IMP Score**`,
+        value: `\`${impColor}${impScore.toFixed(1)}\`\n*${impData.match_count} matches*`,
+        inline: true
+      });
+    }
+
+    // Awards
+    if (totalAwardsCount > 0) {
+      gamificationFields.push({
+        name: '🏆 **Awards**',
+        value: `\`${totalAwardsCount}\`\n*Achievements*`,
+        inline: true
+      });
+    }
+
+    if (gamificationFields.length > 0) {
+      embed.addFields(...gamificationFields);
+    }
+
+    // 11. Top Heroes - Card-style layout (MEE6/Tatsu inspired)
+    if (profile.topHeroes && profile.topHeroes.length > 0) {
+      embed.addFields({ 
+        name: '\u200B', 
+        value: '## 🦸 Top Heroes', 
+        inline: false 
+      });
+      
+      const heroCards = await Promise.all(
+        profile.topHeroes
+          .slice(0, 5)
+          .map(async (hero, index) => {
+            const games = hero.matches ?? 0;
+            const wr = typeof hero.winRate === 'string' ? parseFloat(hero.winRate) : hero.winRate ?? 0;
+            
+            // Medal based on position
+            const medals = ['🥇', '🥈', '🥉', '4⃣', '5⃣'];
+            const medal = medals[index];
+            
+            // Performance indicator
+            const perfEmoji = wr >= 60 ? '🔥' : wr >= 55 ? '⚡' : wr >= 50 ? '✨' : '💫';
+            
+            // Mini progress bar (5 blocks)
+            const miniBarLength = 5;
+            const filled = Math.round((wr / 100) * miniBarLength);
+            const miniBar = '▰'.repeat(filled) + '▱'.repeat(miniBarLength - filled);
+            
+            return {
+              name: `${medal} **${hero.name}**`,
+              value: `${perfEmoji} \`${wr.toFixed(1)}%\` ${miniBar}\n*${games} games*`,
+              inline: true
+            };
+          })
+      );
+
+      embed.addFields(...heroCards);
+    }
+
+    // 12. Recent Awards - Compact badge display (Arcane style)
+    embed.addFields({ 
+      name: '\u200B', 
+      value: `## 🏆 Recent Achievements ${totalAwardsCount > 0 ? `• \`${totalAwardsCount}\` total` : ''}`, 
+      inline: false 
+    });
+    
+    if (awardsResult.rows.length > 0) {
+      const awardEmojis: Record<string, string> = {
+        'godlike_streak': '⚡',
+        'flash_farmer': '💰',
+        'unstoppable_kda': '🔥',
+        'support_savior': '💊',
+        'tank_master': '🛡️',
+        'assist_king': '🤝',
+        'comeback_win': '🎯',
+        'iron_wall': '🏰',
+        'rapid_game': '⏱️',
+        'marathon_game': '🏃'
+      };
+
+      const recentAwards = await Promise.all(
+        awardsResult.rows.flatMap(row => 
+          row.award_keys.slice(0, 3).map(async (key: string) => {
+            const emoji = awardEmojis[key] || '🏅';
+            const name = await tInteraction(interaction, `award_${key}`);
+            return `${emoji} ${name}`;
+          })
+        )
+      );
+      
+      // Display as compact badge list (max 6)
+      const uniqueAwards = [...new Set(recentAwards)].slice(0, 6);
+      const awardsDisplay = uniqueAwards.map(a => `> ${a}`).join('\n');
+      
+      embed.addFields({ 
+        name: '\u200B', 
+        value: awardsDisplay || '*No recent achievements*',
+        inline: false 
+      });
+    } else {
+      embed.addFields({ 
+        name: '\u200B', 
+        value: '> *Play matches to unlock achievements!*',
+        inline: false 
+      });
+    }
+
+    // Footer with profile link and timestamp
+    embed.setFooter({ 
+      text: `APOLO v2.0 • Real-time data from Stratz & OpenDota`,
+      iconURL: 'https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/global/dota2_logo_symbol.png'
+    });
+    embed.setTimestamp();
+    
+    // Add profile URL as button-style text
+    embed.setURL(`https://stratz.com/players/${steamId}`);
+
+    console.log(`[PROFILE] Sending embed with ${embed.data.fields?.length || 0} fields`);
+    await interaction.editReply({ embeds: [embed] });
+    console.log(`[PROFILE] Profile successfully sent to ${interaction.user.tag}`);
+
+  } catch (error) {
+    console.error(`[PROFILE] Error in handleDashboardProfile:`, error);
+    log.error({ error, context: 'handleDashboardProfile', userId: interaction.user.id }, 'Error in handleDashboardProfile');
+    const errorResponse = handleError(error, { context: 'handleDashboardProfile', userId: interaction.user.id, operation: 'fetch_profile' });
+    await interaction.editReply({ content: `❌ ${errorResponse.message}` });
+  }
+}
+
+/**
+ * Feature 3: Progress Tracking
+ * Shows GPM/XPM evolution charts
+ */
+async function handleDashboardProgress(interaction: ButtonInteraction): Promise<void> {
+  await interaction.deferReply({ ephemeral: true });
+
+  try {
+    // 1. Check if user has Steam linked
+    const userResult = await pool.query(
+      'SELECT steam_id FROM users WHERE discord_id = $1',
+      [interaction.user.id]
+    );
+
+    if (!userResult || userResult.rows.length === 0) {
+      await interaction.editReply({
+        content: '❌ **Conta Steam não vinculada!**\n\nUse o botão `🔗 Conectar Steam` no dashboard principal primeiro.',
+      });
+      return;
+    }
+
+    const steamId = userResult.rows[0].steam_id;
+
+    // 2. Fetch match history from Stratz
+    const matches = await stratzService.getMatchHistory(steamId, 20);
+
+    if (!matches || matches.length === 0) {
+      await interaction.editReply({
+        content: '❌ **Nenhuma partida encontrada!**\n\nJogue algumas partidas primeiro para ver sua evolução.',
+      });
+      return;
+    }
+
+    // 3. Prepare data for chart generation (GPM only, since chartGenerator expects single dataset)
+    const gpmData = matches.map(m => m.gpm);
+    const xpmData = matches.map(m => m.xpm);
+
+    // 4. Generate progress chart (only GPM for now - chartGenerator.ts needs update for multiple datasets)
+    const chartBuffer = await generateProgressChart({
+      data: gpmData,
+      label: 'GPM Evolution',
+      yAxisLabel: 'Gold Per Minute',
+      color: '#f39c12'
+    });
+
+    // 5. Calculate statistics
+    const avgGPM = (gpmData.reduce((a, b) => a + b, 0) / gpmData.length).toFixed(0);
+    const avgXPM = (xpmData.reduce((a, b) => a + b, 0) / xpmData.length).toFixed(0);
+    const maxGPM = Math.max(...gpmData);
+    const maxXPM = Math.max(...xpmData);
+    const minGPM = Math.min(...gpmData);
+    const minXPM = Math.min(...xpmData);
+
+    // Calculate trends (last 5 vs first 5 matches)
+    const recentGPM = gpmData.slice(-5).reduce((a, b) => a + b, 0) / 5;
+    const oldGPM = gpmData.slice(0, 5).reduce((a, b) => a + b, 0) / 5;
+    const gpmTrend = recentGPM - oldGPM;
+    const trendEmoji = gpmTrend > 0 ? '📈' : gpmTrend < 0 ? '📉' : '➡️';
+
+    // 6. Create MODERN embed (MEE6/Arcane-inspired)
+    const embedColor = getPerformanceColor(parseFloat(avgGPM), { excellent: 600, good: 500, average: 400, poor: 300 });
+
+    const embed = new EmbedBuilder()
+      .setColor(embedColor)
+      .setAuthor({ 
+        name: `${interaction.user.username} • Evolução de Performance`,
+        iconURL: interaction.user.displayAvatarURL()
+      })
+      .setDescription(`📊 Análise das últimas **${matches.length} partidas**\\n${trendEmoji} ${gpmTrend > 0 ? 'Melhorando!' : gpmTrend < 0 ? 'Em queda' : 'Estável'} **(${gpmTrend > 0 ? '+' : ''}${gpmTrend.toFixed(0)} GPM)**`)
+      .addFields([
+        { name: '\\n💰 Gold Per Minute (GPM)', value: '** **', inline: false },
+        { name: '📊 Média', value: `**${avgGPM}**`, inline: true },
+        { name: '🔥 Máximo', value: `**${maxGPM}**`, inline: true },
+        { name: '❄️ Mínimo', value: `**${minGPM}**`, inline: true },
+        
+        { name: '\\n📈 Experience Per Minute (XPM)', value: '** **', inline: false },
+        { name: '📊 Média', value: `**${avgXPM}**`, inline: true },
+        { name: '🔥 Máximo', value: `**${maxXPM}**`, inline: true },
+        { name: '❄️ Mínimo', value: `**${minXPM}**`, inline: true },
+      ])
+      .setImage('attachment://progress.png')
+      .setFooter({ text: `${matches.length} partidas analisadas • Stratz API` })
+      .setTimestamp();
+
+    // 7. Send response with chart
+    const attachment = new AttachmentBuilder(chartBuffer, { name: 'progress.png' });
+    
+    await interaction.editReply({
+      embeds: [embed],
+      files: [attachment],
+    });
+
+  } catch (error) {
+    log.error({ error, context: 'handleDashboardProgress', userId: interaction.user.id }, 'Error in handleDashboardProgress');
+    const errorResponse = handleError(error, { context: 'handleDashboardProgress', userId: interaction.user.id, operation: 'generate_chart' });
+    await interaction.editReply({ content: `❌ ${errorResponse.message}` });
+  }
+}
+
+/**
+ * Feature 4: Server Leaderboard
+ * Shows top 10 players in 4 categories
+ */
+async function handleDashboardLeaderboard(interaction: ButtonInteraction): Promise<void> {
+  await interaction.deferReply({ ephemeral: true });
+
+  try {
+    if (!interaction.guild) {
+      await interaction.editReply({
+        content: '❌ Este comando só pode ser usado em servidores!',
+      });
+      return;
+    }
+
+    const guildId = interaction.guild.id;
+
+    // 1. Query top 10 by win rate (min 20 matches)
+    const winRateResult = await pool.query(
+      `SELECT discord_id, 
+              ROUND((total_wins::numeric / NULLIF(total_matches, 0) * 100), 1) as win_rate,
+              total_matches
+       FROM server_stats
+       WHERE guild_id = $1 AND total_matches >= 20
+       ORDER BY win_rate DESC
+       LIMIT 10`,
+      [guildId]
+    );
+
+    // 2. Query top 10 by GPM
+    const gpmResult = await pool.query(
+      `SELECT discord_id, ROUND(avg_gpm, 0) as gpm
+       FROM server_stats
+       WHERE guild_id = $1 AND total_matches >= 10
+       ORDER BY avg_gpm DESC
+       LIMIT 10`,
+      [guildId]
+    );
+
+    // 3. Query top 10 by XPM
+    const xpmResult = await pool.query(
+      `SELECT discord_id, ROUND(avg_xpm, 0) as xpm
+       FROM server_stats
+       WHERE guild_id = $1 AND total_matches >= 10
+       ORDER BY avg_xpm DESC
+       LIMIT 10`,
+      [guildId]
+    );
+
+    // 4. Query top 10 by win streak
+    const streakResult = await pool.query(
+      `SELECT discord_id, win_streak
+       FROM server_stats
+       WHERE guild_id = $1 AND win_streak >= 3
+       ORDER BY win_streak DESC
+       LIMIT 10`,
+      [guildId]
+    );
+
+    // 5. Query top 10 by average IMP Score (min 10 matches)
+    const impResult = await pool.query(
+      `SELECT u.discord_id, 
+              ROUND(AVG(mis.imp_score), 1) as avg_imp,
+              COUNT(mis.imp_score) as match_count
+       FROM users u
+       INNER JOIN match_imp_scores mis ON u.steam_id = mis.steam_id
+       WHERE u.discord_id IN (
+         SELECT DISTINCT discord_id 
+         FROM server_stats 
+         WHERE guild_id = $1
+       )
+       GROUP BY u.discord_id
+       HAVING COUNT(mis.imp_score) >= 10
+       ORDER BY avg_imp DESC
+       LIMIT 10`,
+      [guildId]
+    );
+
+    // 6. Query top 10 by XP/Level
+    const xpResult = await pool.query(
+      `SELECT ux.discord_id, 
+              ux.current_level,
+              ux.total_xp
+       FROM user_xp ux
+       WHERE ux.discord_id IN (
+         SELECT DISTINCT discord_id 
+         FROM server_stats 
+         WHERE guild_id = $1
+       )
+       ORDER BY ux.total_xp DESC
+       LIMIT 10`,
+      [guildId]
+    );
+
+    // 7. Query top 10 by total awards count
+    const awardsResult = await pool.query(
+      `SELECT u.discord_id,
+              COUNT(ma.id) as total_awards,
+              SUM(CARDINALITY(ma.award_keys)) as award_count
+       FROM users u
+       INNER JOIN match_awards ma ON u.steam_id = ma.steam_id
+       WHERE u.discord_id IN (
+         SELECT DISTINCT discord_id 
+         FROM server_stats 
+         WHERE guild_id = $1
+       )
+       GROUP BY u.discord_id
+       ORDER BY award_count DESC
+       LIMIT 10`,
+      [guildId]
+    );
+
+    // 8. Format leaderboards with MODERN style (MEE6/Arcane-inspired)
+    const formatLeaderboard = async (rows: any[], field: string, suffix = '', formatFunc?: (row: any) => string) => {
+      if (rows.length === 0) return `> ${await tInteraction(interaction, 'leaderboard_no_data')}`;
+      
+      return rows
+        .map((row, index) => {
+          const value = formatFunc ? formatFunc(row) : `${row[field]}${suffix}`;
+          const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `\`${index + 1}.\``;
+          const bar = createMiniBar(index === 0 ? 100 : index === 1 ? 80 : index === 2 ? 60 : 40);
+          return `${medal} <@${row.discord_id}> **${value}**\\n${bar}`;
+        })
+        .join('\\n\\n');
+    };
+
+    // 9. Get translations
+    const title = await tInteraction(interaction, 'leaderboard_title');
+    const description = await tInteraction(interaction, 'leaderboard_description', { server: interaction.guild.name });
+    const winrateLabel = await tInteraction(interaction, 'leaderboard_winrate');
+    const gpmLabel = await tInteraction(interaction, 'leaderboard_gpm');
+    const xpmLabel = await tInteraction(interaction, 'leaderboard_xpm');
+    const streakLabel = await tInteraction(interaction, 'leaderboard_streak');
+    const impLabel = await tInteraction(interaction, 'leaderboard_imp');
+    const xpLabel = await tInteraction(interaction, 'leaderboard_xp');
+    const awardsLabel = await tInteraction(interaction, 'leaderboard_awards');
+    const footerText = await tInteraction(interaction, 'leaderboard_footer');
+
+    // 10. Create MODERN embed with all categories
+    const embed = new EmbedBuilder()
+      .setColor(0xF1C40F) // Gold
+      .setAuthor({ 
+        name: `${interaction.guild.name} • ${title}`,
+        iconURL: interaction.guild.iconURL() || undefined
+      })
+      .setDescription(`🏆 ${description}\\n** **`)
+      .addFields(
+        { 
+          name: `${sectionHeader('🎯 ' + winrateLabel)}`, 
+          value: await formatLeaderboard(winRateResult.rows, 'win_rate', '%'), 
+          inline: false 
+        },
+        { name: '** **', value: '** **', inline: false }, // Spacer
+        { 
+          name: `${sectionHeader('💰 ' + gpmLabel)}`, 
+          value: await formatLeaderboard(gpmResult.rows, 'gpm'), 
+          inline: false 
+        },
+        { name: '** **', value: '** **', inline: false }, // Spacer
+        { 
+          name: `${sectionHeader('📈 ' + xpmLabel)}`, 
+          value: await formatLeaderboard(xpmResult.rows, 'xpm'), 
+          inline: false 
+        },
+        { name: '** **', value: '** **', inline: false }, // Spacer
+        { 
+          name: `${sectionHeader('🔥 ' + streakLabel)}`, 
+          value: await formatLeaderboard(streakResult.rows, 'win_streak', ' vitórias'), 
+          inline: false 
+        },
+        { name: '** **', value: '** **', inline: false }, // Spacer
+        { 
+          name: `${sectionHeader('🧠 ' + impLabel)}`, 
+          value: await formatLeaderboard(impResult.rows, 'avg_imp'), 
+          inline: false 
+        },
+        { name: '** **', value: '** **', inline: false }, // Spacer
+        { 
+          name: `${sectionHeader('⭐ ' + xpLabel)}`, 
+          value: await formatLeaderboard(xpResult.rows, 'total_xp', '', (row) => {
+            return `Nível ${row.current_level} (${formatNumber(row.total_xp)} XP)`;
+          }), 
+          inline: false 
+        },
+        { name: '** **', value: '** **', inline: false }, // Spacer
+        { 
+          name: `${sectionHeader('🎖️ ' + awardsLabel)}`, 
+          value: await formatLeaderboard(awardsResult.rows, 'award_count', ' conquistas'), 
+          inline: false 
+        }
+      )
+      .setFooter({ text: `${footerText} • Atualizado` })
+      .setTimestamp();
+
+    await interaction.editReply({ embeds: [embed] });
+
+  } catch (error) {
+    log.error({ error, context: 'handleDashboardLeaderboard', guildId: interaction.guild?.id }, 'Error in handleDashboardLeaderboard');
+    const errorResponse = handleError(error, { context: 'handleDashboardLeaderboard', guildId: interaction.guild?.id, operation: 'query_leaderboard' });
+    await interaction.editReply({ content: `❌ ${errorResponse.message}` });
+  }
 }

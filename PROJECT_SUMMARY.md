@@ -582,6 +582,8 @@ CREATE TABLE server_stats (
   total_losses INT DEFAULT 0,
   win_streak INT DEFAULT 0,
   avg_gpm DECIMAL(10,2),
+  avg_xpm DECIMAL(10,2),
+  avg_imp_score DECIMAL(10,2),
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(guild_id, discord_id)
 );
@@ -596,6 +598,113 @@ CREATE INDEX idx_stats_gpm ON server_stats(guild_id, avg_gpm DESC);
 - Leaderboard queries (top 10)
 - Server-specific rankings
 - Updated after each match
+
+### 5. match_imp_scores Table (Tier 1 Gamification - v2.2.0)
+
+Stores IMP Score system data for each match.
+
+```sql
+CREATE TABLE match_imp_scores (
+  id SERIAL PRIMARY KEY,
+  match_id BIGINT NOT NULL,
+  steam_id VARCHAR(20) NOT NULL,
+  discord_id VARCHAR(20) NOT NULL,
+  imp_score INT, -- Range: -100 to +100
+  kda_component INT,
+  economy_component INT,
+  impact_component INT,
+  win_bonus INT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (discord_id) REFERENCES users(discord_id)
+);
+
+CREATE INDEX idx_imp_steam_id ON match_imp_scores(steam_id);
+CREATE INDEX idx_imp_created_at ON match_imp_scores(created_at DESC);
+```
+
+**Usage:**
+
+- Profile IMP average calculation
+- Match analysis display
+- Leaderboard sorting (future)
+
+### 6. match_awards Table (Tier 1 Gamification - v2.2.0)
+
+Stores match award achievements.
+
+```sql
+CREATE TABLE match_awards (
+  id SERIAL PRIMARY KEY,
+  match_id BIGINT NOT NULL,
+  steam_id VARCHAR(20) NOT NULL,
+  discord_id VARCHAR(20) NOT NULL,
+  award_type VARCHAR(50), -- godlike_streak, flash_farmer, etc.
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (discord_id) REFERENCES users(discord_id)
+);
+
+CREATE INDEX idx_awards_steam_id ON match_awards(steam_id);
+CREATE INDEX idx_awards_type ON match_awards(award_type);
+```
+
+**Usage:**
+
+- Award display in profiles
+- Award notifications
+- Achievement tracking
+
+### 7. user_xp Table (Tier 1 Gamification - v2.2.0)
+
+Stores user XP and leveling data.
+
+```sql
+CREATE TABLE user_xp (
+  id SERIAL PRIMARY KEY,
+  discord_id VARCHAR(20) UNIQUE NOT NULL,
+  guild_id VARCHAR(20),
+  current_xp INT DEFAULT 0,
+  current_level INT DEFAULT 1,
+  total_earned INT DEFAULT 0,
+  last_match_bonus_date DATE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (discord_id) REFERENCES users(discord_id)
+);
+
+CREATE INDEX idx_xp_discord_id ON user_xp(discord_id);
+CREATE INDEX idx_xp_level ON user_xp(current_level DESC);
+```
+
+**Usage:**
+
+- Level system
+- Profile XP bar display
+- Progression tracking
+
+### 8. xp_events Table (Tier 1 Gamification - v2.2.0)
+
+Event log for XP grants (audit trail).
+
+```sql
+CREATE TABLE xp_events (
+  id SERIAL PRIMARY KEY,
+  user_id VARCHAR(20) NOT NULL,
+  event_type VARCHAR(50), -- match, message, voice, award, admin
+  amount INT NOT NULL,
+  source VARCHAR(100), -- match_id, admin_reason, etc.
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(discord_id)
+);
+
+CREATE INDEX idx_xp_events_user ON xp_events(user_id, created_at DESC);
+CREATE INDEX idx_xp_events_source ON xp_events(source);
+```
+
+**Usage:**
+
+- XP history tracking
+- Admin audit log
+- Debugging and insights
 
 ## API Integration
 

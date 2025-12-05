@@ -1,0 +1,52 @@
+# Prometheus Configuration for APOLO Dota 2 Bot
+#
+# Scrapes metrics from the bot's /metrics endpoint every 15 seconds.
+# Retains data for 15 days.
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'apolo-dota2-monitor'
+    environment: 'production'
+
+# Alerting configuration (optional - for production)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets: ['alertmanager:9093']
+
+# Rule files (for alerts - optional)
+# rule_files:
+#   - 'alerts/*.yml'
+
+# Scrape configurations
+scrape_configs:
+  # APOLO Bot Metrics
+  - job_name: 'apolo-bot'
+    static_configs:
+      - targets: ['bot:9090']
+        labels:
+          service: 'discord-bot'
+          app: 'apolo-dota2'
+    
+    # Scrape settings
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    
+    # Metrics path
+    metrics_path: '/metrics'
+    
+    # Relabeling (optional)
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'apolo-bot'
+
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9091']
+    
+    scrape_interval: 30s
+    metrics_path: '/metrics'

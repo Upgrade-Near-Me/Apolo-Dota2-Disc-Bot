@@ -98,8 +98,6 @@ export class PoolManager {
       min: this.config.min,
       idleTimeoutMillis: this.config.idleTimeoutMillis,
       connectionTimeoutMillis: this.config.connectionTimeoutMillis,
-      // Enable prepared statement caching
-      statement_cache_size: this.config.statement_cache_size,
       // Connection validation
       query_timeout: this.config.statement_timeout,
     });
@@ -112,7 +110,6 @@ export class PoolManager {
         min: Math.ceil(this.config.failoverPoolSize / 4),
         idleTimeoutMillis: 30000,
         connectionTimeoutMillis: this.config.connectionTimeoutMillis,
-        statement_cache_size: 256,
       });
 
       console.log(`✅ Failover pool enabled (${this.config.failoverPoolSize} connections)`);
@@ -216,9 +213,9 @@ export class PoolManager {
       const p95Idx = Math.ceil(sorted.length * 0.95) - 1;
       const p99Idx = Math.ceil(sorted.length * 0.99) - 1;
 
-      this.metrics.averageQueryTime = avg;
-      this.metrics.p95QueryTime = sorted[Math.max(0, p95Idx)];
-      this.metrics.p99QueryTime = sorted[Math.max(0, p99Idx)];
+      this.metrics.averageQueryTime = avg ?? 0;
+      this.metrics.p95QueryTime = sorted[Math.max(0, p95Idx)] ?? 0;
+      this.metrics.p99QueryTime = sorted[Math.max(0, p99Idx)] ?? 0;
     }
 
     // Calculate success rate
@@ -479,5 +476,3 @@ export class PoolManager {
  * Global pool manager instance
  */
 export const poolManager = new PoolManager();
-
-export type { PoolMetrics };

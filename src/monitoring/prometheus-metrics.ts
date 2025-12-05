@@ -16,7 +16,7 @@
  */
 
 import promClient from 'prom-client';
-import { logger } from './logger';
+import logger from '../utils/logger.js';
 
 /**
  * ========================================================================

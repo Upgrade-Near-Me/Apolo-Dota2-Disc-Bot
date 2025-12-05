@@ -127,6 +127,21 @@ interface HeroBuild {
   itemsData: unknown;
 }
 
+export interface WardPlacement {
+  x: number;
+  y: number;
+  time: number;
+  type: 'observer' | 'sentry';
+  side: 'RADIANT' | 'DIRE';
+}
+
+export interface MatchVision {
+  matchId: number;
+  duration: number;
+  observers: WardPlacement[];
+  sentries: WardPlacement[];
+}
+
 async function ensureHeroes(): Promise<void> {
   const now = Date.now();
   if (HEROES_CACHE.map.size > 0 && now - HEROES_CACHE.lastLoaded < 6 * 60 * 60 * 1000) return; // 6h cache
@@ -274,10 +289,39 @@ export async function getHeroBuild(heroId: number): Promise<HeroBuild> {
   };
 }
 
+export async function getMatchVision(matchId: number): Promise<MatchVision> {
+  const res = await fetch(`https://api.opendota.com/api/matches/${matchId}`);
+  if (!res.ok) throw new Error(`Failed to load match ${matchId} vision data`);
+
+  const json = await res.json() as any;
+  const obsLog: any[] = Array.isArray(json?.obs_log) ? json.obs_log : [];
+  const senLog: any[] = Array.isArray(json?.sen_log) ? json.sen_log : [];
+  const duration = typeof json?.duration === 'number' ? json.duration : 0;
+
+  const mapWard = (entry: any, type: 'observer' | 'sentry'): WardPlacement | null => {
+    if (typeof entry?.x !== 'number' || typeof entry?.y !== 'number') return null;
+    const time = typeof entry?.time === 'number' ? entry.time : 0;
+    const playerSlot = typeof entry?.player_slot === 'number' ? entry.player_slot : 0;
+    const side = isRadiant(playerSlot) ? 'RADIANT' : 'DIRE';
+    return { x: entry.x, y: entry.y, time, type, side };
+  };
+
+  const observers = obsLog
+    .map((entry) => mapWard(entry, 'observer'))
+    .filter((entry): entry is WardPlacement => Boolean(entry));
+
+  const sentries = senLog
+    .map((entry) => mapWard(entry, 'sentry'))
+    .filter((entry): entry is WardPlacement => Boolean(entry));
+
+  return { matchId, duration, observers, sentries };
+}
+
 export default {
   getLastMatch,
   getPlayerProfile,
   getMatchHistory,
   getMetaHeroes,
   getHeroBuild,
+  getMatchVision,
 };

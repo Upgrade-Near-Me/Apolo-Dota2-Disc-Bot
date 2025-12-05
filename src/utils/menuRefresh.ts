@@ -1,6 +1,6 @@
 ﻿/* eslint-disable @typescript-eslint/no-explicit-any */
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType, type Guild, type Client, type TextChannel } from 'discord.js';
-import { t } from './i18n.js';
+import { tLegacy as t } from './i18n.js';
 
 function strip(name: string): string {
   return name

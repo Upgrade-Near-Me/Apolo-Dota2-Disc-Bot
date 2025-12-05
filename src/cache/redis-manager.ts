@@ -102,17 +102,17 @@ export class RedisManager {
           sentinels: config.sentinelHosts,
           name: 'mymaster',
           sentinelMaxRedirections: 10,
-          sentinelRetryStrategy: (times) => Math.min(times * 100, 1000),
+          sentinelRetryStrategy: (times: number) => Math.min(times * 100, 1000),
         }),
 
       // Cluster support
       ...(config.enableCluster && {
         cluster: true,
-        clusterRetryStrategy: (times) => Math.min(times * 100, 1000),
+        clusterRetryStrategy: (times: number) => Math.min(times * 100, 1000),
       }),
 
       // Reconnection strategy
-      retryStrategy: (times) => {
+      retryStrategy: (times: number) => {
         const delay = Math.min(times * 100, 3000);
         console.log(`🔄 Redis reconnect attempt ${times} (delay: ${delay}ms)`);
         return delay;

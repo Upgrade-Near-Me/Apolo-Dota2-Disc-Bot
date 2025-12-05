@@ -18,22 +18,31 @@
 
 ## 📊 Current Status
 
-**Version:** 2.1 (Production Ready - Phase 17 Sharding Complete)
+**Version:** 2.2.0 (Production Ready)  
+**Release Date:** December 2025  
+**Status:** ✅ Ready for Public Launch
 
-**Production Hardening Progress:**
+### Tier 1 Features (100% Complete)
 
-- ✅ Phase 10: Unit Tests (Vitest) - Team Balancer 100% coverage (12 tests, all passing)
-- ✅ Structured Logging (Pino) - All console.log replaced
-- ✅ Comprehensive Error Handling - Centralized error mapping
-- ✅ Rate Limiting (Redis) - API protection (Stratz 90 req/min, OpenDota 50 req/min, Gemini 15 req/min)
-- ✅ Input Validation - Steam ID, Discord ID validation
-- ✅ Graceful Shutdown - SIGTERM handling for clean stops
-- ✅ Phase 17: Sharding & IPC - Core manager + IPC handler with integration tests passing (`tests/integration/sharding.test.ts`)
-- 🔄 Phase 11: E2E Tests (Next) - API integration testing
-- 🔄 Phase 12: Database Pooling - Connection optimization for 1M queries/day
-- 🔄 Phase 13: Redis Optimization - Cache layer scaling
+**Core Systems:**
 
-**For detailed roadmap to 1M+ users:** See `docs/SCALE_1M_ROADMAP.md`
+- ✅ IMP Score System (-100 to +100 performance rating)
+- ✅ Match Awards (10 automated achievement types)
+- ✅ XP & Leveling (dynamic progression system)
+- ✅ Hero Benchmarks (OpenDota percentile rankings)
+- ✅ Ward Heatmap & Vision Score
+- ✅ 7 Leaderboard Categories
+- ✅ 8 AI Analysis Tools (Google Gemini)
+- ✅ Multi-language Support (EN/PT/ES)
+
+**Infrastructure:**
+
+- ✅ Docker Production Deployment
+- ✅ PostgreSQL + Redis Stack
+- ✅ Prometheus Metrics + Grafana Dashboards
+- ✅ 100+ Tests Passing (Unit + E2E)
+
+**Roadmap:** See [`docs/ROADMAP_2025.md`](docs/ROADMAP_2025.md)
 
 ### ✨ Key Features
 
@@ -149,23 +158,32 @@ npm run dev
 
 ## 📚 Documentation
 
+### Getting Started
+
 - [📖 Setup Guide](SETUP.md) - Detailed installation instructions
 - [⚡ Quick Start](QUICKSTART.md) - Get running in 5 minutes
-- [🆕 Features](FEATURES.md) - Team balancer and multi-language guide
 - [🐳 Docker Guide](DOCKER.md) - Container deployment
-- [📝 Project Summary](PROJECT_SUMMARY.md) - Complete technical overview
-- [🚀 Scale Roadmap](docs/SCALE_1M_ROADMAP.md) - Plan to reach 1M+ users (fases, custos, riscos)
 
-## 📈 Scale to 1M+ Users (Enterprise)
+### Features & Architecture
 
-Ready for growth beyond 5,000+ servers and 1M+ users:
+- [🆕 Features Guide](FEATURES.md) - Complete feature documentation
+- [📝 Project Summary](PROJECT_SUMMARY.md) - Technical architecture overview
+- [🌍 I18n Guide](docs/I18N_GUIDE.md) - Multi-language implementation
+- [🚀 I18n Quick Reference](docs/I18N_QUICK_REFERENCE.md) - Translation code examples
 
-- **Roadmap:** see `docs/SCALE_1M_ROADMAP.md` for the full timeline, costs, risks, and checklist
-- **Phase 1 (Foundation):** input/env validation, structured logging, graceful shutdown, rate limiting, Postgres/Redis tuning, unit tests, Prometheus/health checks
-- **Phase 2 (Sharding):** Discord ShardingManager + IPC, shard-aware handlers, Redis clustering, DB pool scaling, load tests (~5k servers)
-- **Phase 3 (Optimization):** BullMQ for heavy jobs (images/AI), schema/index tuning, aggressive caching, E2E APIs, profiling, webhooks
-- **Phase 4 (Deployment):** Kubernetes recommended (auto-scaling, rolling updates), GitOps (ArgoCD), Prometheus + Grafana + ELK, backups and DR
-- **Quick Wins (4h):** input/env validation, graceful shutdown, structured logging, rate limiting — immediate robustness boost
+### Operations & Monitoring
+
+- [📊 Prometheus Metrics](docs/PROMETHEUS_METRICS_GUIDE.md) - Metrics collection and dashboards
+- [⏱️ Command Latency Tracking](docs/COMMAND_LATENCY_TRACKING_GUIDE.md) - Performance monitoring
+- [⚡ Redis Optimization](docs/REDIS_QUICK_REFERENCE.md) - Caching strategies
+- [🗄️ Database Optimization](docs/TASK_7_DATABASE_OPTIMIZATION.md) - Connection pooling and tuning
+
+### Roadmap & Scaling
+
+- [🗺️ Roadmap 2025](docs/ROADMAP_2025.md) - Feature roadmap and timeline
+- [🚀 Scale to 1M Users](docs/SCALE_1M_ROADMAP.md) - Infrastructure scaling plan
+- [📋 Launch Checklist](docs/LAUNCH_CHECKLIST.md) - Production deployment checklist
+- [🔍 Implementation Status](docs/IMPLEMENTATION_STATUS.md) - Current feature status
 
 ## 🎮 Commands & Features
 
@@ -176,6 +194,7 @@ Ready for growth beyond 5,000+ servers and 1M+ users:
 | `/dashboard` | Open interactive control panel | `/dashboard` |
 | `/setup-apolo-structure` | Create all bot channels and categories | `/setup-apolo-structure` |
 | `/remove-apolo-structure` | Remove all bot channels | `/remove-apolo-structure` |
+| `/xp-admin` | Grant XP to players (admin only) | `/xp-admin user:@Player amount:500 reason:top_3` |
 
 ### Dashboard Channels (8 Specialized Channels)
 

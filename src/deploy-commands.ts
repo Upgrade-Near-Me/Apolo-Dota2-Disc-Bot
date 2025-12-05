@@ -61,6 +61,10 @@ for (const file of commandFiles) {
     const command = commandModule.default;
 
     if (command?.data) {
+      if (command.data.name === 'dashboard') {
+        console.log(`⏭️ Skipped command: ${command.data.name} (disabled)`);
+        continue;
+      }
       commands.push(command.data.toJSON());
       console.log(`✅ Loaded command: ${command.data.name}`);
     } else {

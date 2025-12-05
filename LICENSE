@@ -1,0 +1,190 @@
+# License
+
+MIT License
+
+Copyright (c) 2025 Upgrade Near ME & PKT Gamers
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+## Commercial Use - AUTHORIZATION REQUIRED
+
+**⚠️ IMPORTANT NOTICE**: Commercial use of this software requires explicit written authorization.
+
+### Authorization Requirements
+
+Any commercial use, resale, redistribution, or monetization of this software requires:
+
+1. **Written Authorization** from Upgrade Near ME
+2. **Signed Commercial License Agreement**
+3. **Proof of Authorization** displayed to customers
+
+**Contact for Authorization:** upgradenearme@gmail.com
+
+### Prohibited Without Written Authorization
+
+❌ **STRICTLY PROHIBITED:**
+- Reselling the bot as a service or product
+- White-labeling or rebranding for commercial purposes
+- Including in paid Discord server packages
+- Charging setup, installation, or hosting fees
+- Offering as SaaS (Software as a Service)
+- Commercial hosting with premium features
+- Selling instances or access to customers
+- Any form of monetization or profit generation
+
+**Violation of these terms may result in legal action.**
+
+### Permitted Uses (Authorized Servers Only)
+
+✅ **Allowed ONLY in servers authorized by creators/developers:**
+- Personal use in explicitly authorized Discord servers
+- Non-profit community servers (requires authorization)
+- Educational and research purposes (requires authorization)
+- Open-source contributions to this repository
+
+⚠️ **Authorization Required:**
+All server deployments require explicit authorization from Upgrade Near ME & PKT Gamers.
+Contact: upgradenearme@gmail.com
+
+### Attribution Requirements (All Uses)
+
+All uses must provide clear attribution:
+
+```
+Developed by PKT Gamers & Upgrade Near ME
+https://github.com/Upgrade-Near-Me/Apolo-Dota2-Disc-Bot
+```
+
+### Commercial Licensing Process
+
+To request commercial authorization:
+
+1. **Email:** upgradenearme@gmail.com
+2. **Subject:** "APOLO Bot - Commercial License Request"
+3. **Include:**
+   - Your company/business name
+   - Intended use case and revenue model
+   - Expected server count and user base
+   - Proposed pricing structure
+   - Timeline for deployment
+
+4. **Review Process:**
+   - Initial review: 2-5 business days
+   - License negotiation: Case-by-case
+   - Custom terms available for enterprise
+
+### Trademark Protection
+
+"APOLO" is a registered trademark of Upgrade Near ME & PKT Gamers.
+
+**Protected Uses:**
+- The name "APOLO" in any commercial context
+- Associated branding, logos, and visual identity
+- Marketing materials implying official endorsement
+
+**Unauthorized commercial use of the trademark is prohibited.**
+
+## Third-Party Licenses
+
+This software includes dependencies under various open-source licenses:
+
+### Core Dependencies
+
+- **Discord.js** (Apache-2.0)
+- **TypeScript** (Apache-2.0)
+- **Node.js** (MIT)
+- **PostgreSQL** (PostgreSQL License)
+- **Redis** (BSD-3-Clause)
+
+### API Services
+
+This bot integrates with third-party APIs that have their own terms:
+
+- **Discord API** - [Discord Terms of Service](https://discord.com/terms)
+- **Stratz API** - [Stratz Terms](https://stratz.com/terms)
+- **Steam Web API** - [Steam Web API Terms](https://steamcommunity.com/dev/apiterms)
+- **OpenDota API** - [OpenDota License](https://www.opendota.com/)
+- **Google Gemini AI** - [Google Cloud Terms](https://cloud.google.com/terms)
+
+**Note:** Commercial users must obtain their own API keys and comply with each service's terms.
+
+## Liability Disclaimer
+
+THE AUTHORS AND COPYRIGHT HOLDERS PROVIDE THIS SOFTWARE ON AN "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+
+IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR:
+- Service interruptions or downtime
+- Data loss or corruption
+- API rate limiting or blocks
+- Third-party service failures
+- Financial losses from bot usage
+- Discord account bans or restrictions
+- Legal consequences of unauthorized commercial use
+
+**Authorized commercial users** assume all responsibility for:
+- Compliance with Discord Terms of Service
+- API usage costs and rate limits
+- Data privacy and GDPR compliance
+- Customer support and refunds
+- Server infrastructure and scaling
+- Maintaining valid commercial license
+- Legal compliance in all jurisdictions
+
+**Unauthorized commercial users** are in violation of this license and may face:
+- Immediate license termination
+- Legal action for damages
+- DMCA takedown notices
+- Cease and desist orders
+
+## Data Privacy
+
+This software processes user data. Commercial operators MUST:
+
+✅ **Comply with:**
+- GDPR (EU users)
+- CCPA (California users)
+- Local data protection laws
+
+✅ **Provide:**
+- Privacy policy to end users
+- Data deletion mechanisms
+- Transparent data usage disclosure
+
+## Warranty Disclaimer
+
+THERE IS NO WARRANTY FOR THE PROGRAM, TO THE EXTENT PERMITTED BY APPLICABLE LAW.
+THE COPYRIGHT HOLDERS PROVIDE THE PROGRAM "AS IS" WITHOUT WARRANTY OF ANY KIND.
+
+THE ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE PROGRAM IS WITH YOU.
+SHOULD THE PROGRAM PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL NECESSARY
+SERVICING, REPAIR OR CORRECTION.
+
+## Contact
+
+For licensing questions or commercial partnerships:
+
+- **Repository:** https://github.com/Upgrade-Near-Me/Apolo-Dota2-Disc-Bot
+- **Issues:** https://github.com/Upgrade-Near-Me/Apolo-Dota2-Disc-Bot/issues
+- **Commercial Licensing:** upgradenearme@gmail.com
+- **General Support:** https://github.com/Upgrade-Near-Me/Apolo-Dota2-Disc-Bot/discussions
+
+---
+
+**Last Updated:** December 4, 2025

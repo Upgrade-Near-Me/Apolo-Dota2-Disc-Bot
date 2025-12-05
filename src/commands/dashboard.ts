@@ -25,8 +25,8 @@ import {
   ButtonInteraction,
   ModalSubmitInteraction
 } from 'discord.js';
-// @ts-expect-error - JavaScript module without type declarations
-import { t, loadGuildLocale } from '../utils/i18n.js';
+import { resolveLocale } from '../utils/i18n.js';
+import { i18nService } from '../I18nService.js';
 import type { Command } from '../types/dota.js';
 import type { Pool } from 'pg';
 
@@ -35,18 +35,19 @@ let pool: Pool;
 let openDota: any;
 let dmOrEphemeral: any;
 let buttonHandler: any;
+let initialized = false;
 
 // Dynamic imports
-void (async () => {
-  // @ts-expect-error - JavaScript module
+async function initializeDependencies() {
+  if (initialized) return;
+  
   pool = (await import('../database/index.js')).default;
-  // @ts-expect-error - JavaScript module
   buttonHandler = await import('../handlers/buttonHandler.js');
-  // @ts-expect-error - JavaScript module
   openDota = await import('../services/openDotaService.js');
-  // @ts-expect-error - JavaScript module
   dmOrEphemeral = (await import('../utils/dm.js')).dmOrEphemeral;
-})();
+  
+  initialized = true;
+}
 
 const dashboardCommand: Command = {
   data: new SlashCommandBuilder()
@@ -55,19 +56,22 @@ const dashboardCommand: Command = {
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
   async execute(interaction: ChatInputCommandInteraction): Promise<void> {
+    // Initialize dependencies first
+    await initializeDependencies();
+    
     // Check if user has Administrator permission
     const memberPermissions = interaction.member?.permissions;
     if (memberPermissions && typeof memberPermissions !== 'string' && !memberPermissions.has(PermissionFlagsBits.Administrator)) {
-      const locale = await loadGuildLocale(interaction.guild?.id || '');
+      const locale = await resolveLocale(interaction);
       await interaction.reply({
-        content: t(locale, 'error_generic'),
+        content: i18nService.t(locale, 'error_generic'),
         ephemeral: true,
       });
       return;
     }
     
     // Get user's locale with priority chain
-    const locale = await loadGuildLocale(interaction.guild?.id || '');
+    const locale = await resolveLocale(interaction);
     
     // ===== MODERN ENTERPRISE DASHBOARD 2024/2025 =====
     // Cyberpunk Aesthetic with Clear Visual Hierarchy
@@ -92,17 +96,17 @@ const dashboardCommand: Command = {
     const row1 = new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()
         .setCustomId('dashboard_connect')
-        .setLabel(t(locale, 'btn_connect'))
+        .setLabel(i18nService.t(locale, 'btn_connect'))
         .setStyle(ButtonStyle.Success) // Green = Entry Point
         .setEmoji('🔗'),
       new ButtonBuilder()
         .setCustomId('dashboard_profile')
-        .setLabel(t(locale, 'btn_profile'))
+        .setLabel(i18nService.t(locale, 'btn_profile'))
         .setStyle(ButtonStyle.Primary) // Blue = Main Feature
         .setEmoji('👤'),
       new ButtonBuilder()
         .setCustomId('dashboard_match')
-        .setLabel(t(locale, 'btn_match'))
+        .setLabel(i18nService.t(locale, 'btn_match'))
         .setStyle(ButtonStyle.Primary)
         .setEmoji('📊')
     );
@@ -111,17 +115,17 @@ const dashboardCommand: Command = {
     const row2 = new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()
         .setCustomId('dashboard_ai')
-        .setLabel(t(locale, 'btn_ai_coach'))
+        .setLabel(i18nService.t(locale, 'btn_ai_coach'))
         .setStyle(ButtonStyle.Primary) // Premium Blue
         .setEmoji('🤖'),
       new ButtonBuilder()
         .setCustomId('dashboard_progress')
-        .setLabel(t(locale, 'btn_progress'))
+        .setLabel(i18nService.t(locale, 'btn_progress'))
         .setStyle(ButtonStyle.Secondary) // Gray = Analytics
         .setEmoji('📈'),
       new ButtonBuilder()
         .setCustomId('dashboard_leaderboard')
-        .setLabel(t(locale, 'btn_leaderboard'))
+        .setLabel(i18nService.t(locale, 'btn_leaderboard'))
         .setStyle(ButtonStyle.Secondary)
         .setEmoji('🏆')
     );
@@ -130,17 +134,22 @@ const dashboardCommand: Command = {
     const row3 = new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()
         .setCustomId('dashboard_balance')
-        .setLabel(t(locale, 'btn_balance'))
+        .setLabel(i18nService.t(locale, 'btn_balance'))
         .setStyle(ButtonStyle.Secondary)
         .setEmoji('⚖️'),
       new ButtonBuilder()
         .setCustomId('dashboard_meta')
-        .setLabel(t(locale, 'btn_meta'))
+        .setLabel(i18nService.t(locale, 'btn_meta'))
         .setStyle(ButtonStyle.Secondary)
         .setEmoji('⚔️'),
       new ButtonBuilder()
+        .setCustomId('dashboard_heatmap')
+        .setLabel(i18nService.t(locale, 'btn_heatmap'))
+        .setStyle(ButtonStyle.Secondary)
+        .setEmoji('🗺️'),
+      new ButtonBuilder()
         .setCustomId('dashboard_builds')
-        .setLabel(t(locale, 'btn_build'))
+        .setLabel(i18nService.t(locale, 'btn_build'))
         .setStyle(ButtonStyle.Secondary)
         .setEmoji('🛠️')
     );
@@ -149,17 +158,17 @@ const dashboardCommand: Command = {
     const row4 = new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()
         .setCustomId('dashboard_language')
-        .setLabel(t(locale, 'btn_language') || 'Idioma')
+        .setLabel(i18nService.t(locale, 'btn_language') || 'Idioma')
         .setStyle(ButtonStyle.Secondary)
         .setEmoji('🌍'),
       new ButtonBuilder()
         .setCustomId('dashboard_help')
-        .setLabel(t(locale, 'btn_help'))
+        .setLabel(i18nService.t(locale, 'btn_help'))
         .setStyle(ButtonStyle.Secondary)
         .setEmoji('❓'),
       new ButtonBuilder()
         .setCustomId('dashboard_refresh')
-        .setLabel(t(locale, 'btn_refresh') || 'Atualizar')
+        .setLabel(i18nService.t(locale, 'btn_refresh') || 'Atualizar')
         .setStyle(ButtonStyle.Danger) // Red = Refresh/Reset
         .setEmoji('🔄')
     );
@@ -172,10 +181,13 @@ const dashboardCommand: Command = {
   },
 
   async handleButton(interaction: ButtonInteraction) {
+    // Initialize dependencies first
+    await initializeDependencies();
+    
     const buttonId = interaction.customId;
     
     // Get user's locale for all responses
-    const locale = await loadGuildLocale(interaction.guild?.id || '');
+    const locale = await resolveLocale(interaction);
 
     // Refresh dashboard
     if (buttonId === 'dashboard_refresh') {
@@ -188,11 +200,11 @@ const dashboardCommand: Command = {
     if (buttonId === 'dashboard_connect') {
       const modal = new ModalBuilder()
         .setCustomId('connect_steam_modal')
-        .setTitle(t(locale, 'connect_modal_title'));
+        .setTitle(i18nService.t(locale, 'connect_modal_title'));
 
       const steamIdInput = new TextInputBuilder()
         .setCustomId('steam_id_input')
-        .setLabel(t(locale, 'connect_modal_label'))
+        .setLabel(i18nService.t(locale, 'connect_modal_label'))
         .setStyle(TextInputStyle.Short)
         .setPlaceholder('76561198075697090 or https://steamcommunity.com/id/...')
         .setRequired(true)
@@ -210,8 +222,8 @@ const dashboardCommand: Command = {
     if (buttonId === 'dashboard_language') {
       const languageEmbed = new EmbedBuilder()
         .setColor('#00d9ff')
-        .setTitle('🌍 ' + (t(locale, 'language_title') || 'Selecionar Idioma'))
-        .setDescription(t(locale, 'language_description') || 'Escolha o idioma do bot para este servidor:');
+        .setTitle('🌍 ' + (i18nService.t(locale, 'language_title') || 'Selecionar Idioma'))
+        .setDescription(i18nService.t(locale, 'language_description') || 'Escolha o idioma do bot para este servidor:');
 
       const languageRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
         new ButtonBuilder()
@@ -238,7 +250,7 @@ const dashboardCommand: Command = {
 
     // Language selection handlers
     if (buttonId.startsWith('language_')) {
-      const selectedLocale = buttonId.replace('language_', '');
+      const selectedLocale = buttonId.replace('language_', '') as import('../types/dota.js').Locale;
       
       await interaction.deferReply({ ephemeral: true });
       
@@ -252,12 +264,12 @@ const dashboardCommand: Command = {
         );
 
         await interaction.editReply({
-          content: t(selectedLocale, 'language_success') || '✅ Idioma atualizado com sucesso!',
+          content: i18nService.t(selectedLocale, 'language_success') || '✅ Idioma atualizado com sucesso!',
         });
       } catch (error) {
         console.error('Error updating language:', error);
         await interaction.editReply({
-          content: t(locale, 'error_generic') || '❌ Erro ao atualizar idioma.',
+          content: i18nService.t(locale, 'error_generic') || '❌ Erro ao atualizar idioma.',
         });
       }
       return;
@@ -267,9 +279,9 @@ const dashboardCommand: Command = {
     if (buttonId === 'dashboard_help') {
       const helpEmbed = new EmbedBuilder()
         .setColor('#1e88e5')
-        .setTitle(t(locale, 'embed_title'))
-        .setDescription(t(locale, 'embed_description'))
-        .setFooter({ text: t(locale, 'embed_footer') });
+        .setTitle(i18nService.t(locale, 'embed_title'))
+        .setDescription(i18nService.t(locale, 'embed_description'))
+        .setFooter({ text: i18nService.t(locale, 'embed_footer') });
       
       await interaction.deferReply({ ephemeral: true });
       await dmOrEphemeral(interaction, { embeds: [helpEmbed] });
@@ -289,7 +301,7 @@ const dashboardCommand: Command = {
 
         if (userResult.rows.length === 0) {
           await interaction.editReply({
-            content: t(locale, 'error_no_steam'),
+            content: i18nService.t(locale, 'error_no_steam'),
           });
           return;
         }
@@ -297,7 +309,7 @@ const dashboardCommand: Command = {
         const userRow = userResult.rows[0];
         if (!userRow) {
           await interaction.editReply({
-            content: t(locale, 'error_no_steam'),
+            content: i18nService.t(locale, 'error_no_steam'),
           });
           return;
         }
@@ -310,7 +322,7 @@ const dashboardCommand: Command = {
         
         if (!profile) {
           await interaction.editReply({
-            content: t(locale, 'error_api_unavailable'),
+            content: i18nService.t(locale, 'error_api_unavailable'),
           });
           return;
         }
@@ -318,12 +330,12 @@ const dashboardCommand: Command = {
         // Create profile embed with translations
         const profileEmbed = new EmbedBuilder()
           .setColor('#3498db')
-          .setTitle(`${t(locale, 'profile_title')} ${profile.name || username || 'Unknown Player'}`)
-          .setDescription(`*${t(locale, 'profile_title')}*`)
+          .setTitle(`${i18nService.t(locale, 'profile_title')} ${profile.name || username || 'Unknown Player'}`)
+          .setDescription(`*${i18nService.t(locale, 'profile_title')}*`)
           .setThumbnail(profile.avatar || null)
           .addFields(
             { 
-              name: t(locale, 'profile_matches'), 
+              name: i18nService.t(locale, 'profile_matches'), 
               value: `${profile.totalMatches}`, 
               inline: true 
             },
@@ -338,12 +350,12 @@ const dashboardCommand: Command = {
               inline: true 
             },
             { 
-              name: t(locale, 'profile_winrate'), 
+              name: i18nService.t(locale, 'profile_winrate'), 
               value: `${profile.winRate}%`, 
               inline: true 
             },
             { 
-              name: t(locale, 'profile_rank'), 
+              name: i18nService.t(locale, 'profile_rank'), 
               value: profile.rank || 'Unranked', 
               inline: true 
             },
@@ -368,7 +380,7 @@ const dashboardCommand: Command = {
       } catch (error) {
         console.error('Error loading profile:', error);
         await interaction.editReply({
-          content: t(locale, 'error_generic'),
+          content: i18nService.t(locale, 'error_generic'),
         });
       }
       return;
@@ -387,21 +399,21 @@ const dashboardCommand: Command = {
 
         if (userResult.rows.length === 0) {
           await interaction.editReply({
-            content: t(locale, 'error_no_steam'),
+            content: i18nService.t(locale, 'error_no_steam'),
           });
           return;
         }
 
         const userRowMatch = userResult.rows[0];
         if (!userRowMatch) {
-          await interaction.editReply({ content: t(locale, 'error_no_steam') });
+          await interaction.editReply({ content: i18nService.t(locale, 'error_no_steam') });
           return;
         }
         const steam32Id = parseInt(userRowMatch.steam_id);
 
         // Show loading message with translation
         await interaction.editReply({
-          content: t(locale, 'match_loading'),
+          content: i18nService.t(locale, 'match_loading'),
         });
 
         // Fetch last match from OpenDota
@@ -409,15 +421,15 @@ const dashboardCommand: Command = {
         
         if (!match) {
           await interaction.editReply({
-            content: t(locale, 'error_generic'),
+            content: i18nService.t(locale, 'error_generic'),
           });
           return;
         }
 
         // Create match embed with translations
         const result = match.result === 'WIN' 
-          ? `✅ ${t(locale, 'match_victory')}` 
-          : `❌ ${t(locale, 'match_defeat')}`;
+          ? `✅ ${i18nService.t(locale, 'match_victory')}` 
+          : `❌ ${i18nService.t(locale, 'match_defeat')}`;
         const color = match.result === 'WIN' ? '#2ecc71' : '#e74c3c';
         const kda = ((match.kills + match.assists) / Math.max(match.deaths, 1)).toFixed(2);
         const duration = `${Math.floor(match.duration / 60)}:${String(match.duration % 60).padStart(2, '0')}`;
@@ -425,7 +437,7 @@ const dashboardCommand: Command = {
         const matchEmbed = new EmbedBuilder()
           .setColor(color)
           .setTitle(`${result} - ${match.heroName}`)
-          .setDescription(`*Last match performance • ${t(locale, 'match_duration')}: ${duration}*`)
+          .setDescription(`*Last match performance • ${i18nService.t(locale, 'match_duration')}: ${duration}*`)
           .addFields(
             { name: '⚔️ K/D/A', value: `${match.kills}/${match.deaths}/${match.assists}`, inline: true },
             { name: '📊 KDA Ratio', value: kda, inline: true },
@@ -441,7 +453,7 @@ const dashboardCommand: Command = {
       } catch (error) {
         console.error('Error loading match:', error);
         await interaction.editReply({
-          content: t(locale, 'error_generic'),
+          content: i18nService.t(locale, 'error_generic'),
         });
       }
       return;
@@ -460,14 +472,14 @@ const dashboardCommand: Command = {
 
         if (userResult.rows.length === 0) {
           await interaction.editReply({
-            content: t(locale, 'error_no_steam'),
+            content: i18nService.t(locale, 'error_no_steam'),
           });
           return;
         }
 
         const userRowHistory = userResult.rows[0];
         if (!userRowHistory) {
-          await interaction.editReply({ content: t(locale, 'error_no_steam') });
+          await interaction.editReply({ content: i18nService.t(locale, 'error_no_steam') });
           return;
         }
         const steam32Id = parseInt(userRowHistory.steam_id);
@@ -477,7 +489,7 @@ const dashboardCommand: Command = {
         
         if (!matches || matches.length === 0) {
           await interaction.editReply({
-            content: t(locale, 'error_generic'),
+            content: i18nService.t(locale, 'error_generic'),
           });
           return;
         }
@@ -507,7 +519,7 @@ const dashboardCommand: Command = {
       } catch (error) {
         console.error('Error loading match history:', error);
         await interaction.editReply({
-          content: t(locale, 'error_generic'),
+          content: i18nService.t(locale, 'error_generic'),
         });
       }
       return;
@@ -526,14 +538,14 @@ const dashboardCommand: Command = {
 
         if (userResult.rows.length === 0) {
           await interaction.editReply({
-            content: t(locale, 'error_no_steam'),
+            content: i18nService.t(locale, 'error_no_steam'),
           });
           return;
         }
 
         const userRowProgress = userResult.rows[0];
         if (!userRowProgress) {
-          await interaction.editReply({ content: t(locale, 'error_no_steam') });
+          await interaction.editReply({ content: i18nService.t(locale, 'error_no_steam') });
           return;
         }
         const steam32Id = parseInt(userRowProgress.steam_id);
@@ -543,7 +555,7 @@ const dashboardCommand: Command = {
         
         if (!matches || matches.length === 0) {
           await interaction.editReply({
-            content: t(locale, 'error_generic'),
+            content: i18nService.t(locale, 'error_generic'),
           });
           return;
         }
@@ -565,7 +577,7 @@ const dashboardCommand: Command = {
           .setDescription('*Performance analysis of your last 20 matches*')
           .addFields(
             { name: '🎮 Matches Analyzed', value: `${matches.length}`, inline: true },
-            { name: `✅ ${t(locale, 'profile_winrate')}`, value: `${winRate}%`, inline: true },
+            { name: `✅ ${i18nService.t(locale, 'profile_winrate')}`, value: `${winRate}%`, inline: true },
             { name: '\u200b', value: '\u200b', inline: true },
             { name: '💰 Average GPM', value: avgGPM, inline: true },
             { name: '📈 Average XPM', value: avgXPM, inline: true },
@@ -589,7 +601,7 @@ const dashboardCommand: Command = {
       } catch (error) {
         console.error('Error loading progress:', error);
         await interaction.editReply({
-          content: t(locale, 'error_generic'),
+          content: i18nService.t(locale, 'error_generic'),
         });
       }
       return;
@@ -603,7 +615,7 @@ const dashboardCommand: Command = {
         const guildId = interaction.guild?.id;
         if (!guildId) {
           await interaction.editReply({
-            content: t(locale, 'error_generic'),
+            content: i18nService.t(locale, 'error_generic'),
           });
           return;
         }
@@ -632,7 +644,7 @@ const dashboardCommand: Command = {
 
         if (leaderboardResult.rows.length === 0) {
           await interaction.editReply({
-            content: `📊 **${t(locale, 'btn_leaderboard')} Empty**\n\nNo players with at least 5 matches yet!\n\n🎮 Play some matches to appear on the leaderboard.`,
+            content: `📊 **${i18nService.t(locale, 'btn_leaderboard')} Empty**\n\nNo players with at least 5 matches yet!\n\n🎮 Play some matches to appear on the leaderboard.`,
           });
           return;
         }
@@ -640,7 +652,7 @@ const dashboardCommand: Command = {
         // Create leaderboard embed
         const leaderboardEmbed = new EmbedBuilder()
           .setColor('#f39c12')
-          .setTitle(`🏆 ${t(locale, 'btn_leaderboard')}`)
+          .setTitle(`🏆 ${i18nService.t(locale, 'btn_leaderboard')}`)
           .setDescription('*Top 10 players ranked by win rate • Minimum 5 matches required*')
           .setFooter({ text: `Rankings for ${interaction.guild?.name || 'Server'}` })
           .setTimestamp();
@@ -659,7 +671,7 @@ const dashboardCommand: Command = {
       } catch (error) {
         console.error('Error loading leaderboard:', error);
         await interaction.editReply({
-          content: t(locale, 'error_generic'),
+          content: i18nService.t(locale, 'error_generic'),
         });
       }
       return;
@@ -669,7 +681,7 @@ const dashboardCommand: Command = {
     if (buttonId === 'dashboard_balance') {
       const balanceEmbed = new EmbedBuilder()
         .setColor('#16a085')
-        .setTitle(`⚖️ ${t(locale, 'btn_balance')}`)
+        .setTitle(`⚖️ ${i18nService.t(locale, 'btn_balance')}`)
         .setDescription(
           '**Balance teams based on MMR and move players to voice channels**\n\n' +
           '👥 **Requirements:**\n' +
@@ -687,6 +699,18 @@ const dashboardCommand: Command = {
       
       await interaction.deferReply({ ephemeral: true });
       await dmOrEphemeral(interaction, { embeds: [balanceEmbed] });
+      return;
+    }
+
+    if (buttonId === 'dashboard_heatmap') {
+      if (buttonHandler?.handleButtonInteraction) {
+        await buttonHandler.handleButtonInteraction(interaction);
+      } else {
+        await interaction.reply({
+          content: i18nService.t(locale, 'error_generic'),
+          ephemeral: true,
+        });
+      }
       return;
     }
 
@@ -715,7 +739,7 @@ const dashboardCommand: Command = {
         
         if (!metaHeroes || metaHeroes.length === 0) {
           await interaction.editReply({
-            content: t(locale, 'error_api_unavailable'),
+            content: i18nService.t(locale, 'error_api_unavailable'),
           });
           return;
         }
@@ -723,7 +747,7 @@ const dashboardCommand: Command = {
         // Create meta embed
         const metaEmbed = new EmbedBuilder()
           .setColor('#e74c3c')
-          .setTitle(`🎯 ${t(locale, 'btn_meta')}`)
+          .setTitle(`🎯 ${i18nService.t(locale, 'btn_meta')}`)
           .setDescription('*Top 15 heroes ranked by win rate in professional matches*')
           .setFooter({ text: 'Data from OpenDota • Professional scene statistics' })
           .setTimestamp();
@@ -743,7 +767,7 @@ const dashboardCommand: Command = {
       } catch (error) {
         console.error('Error loading meta:', error);
         await interaction.editReply({
-          content: t(locale, 'error_api_unavailable'),
+          content: i18nService.t(locale, 'error_api_unavailable'),
         });
       }
       return;
@@ -754,7 +778,7 @@ const dashboardCommand: Command = {
       // Show modal to ask for hero name
       const modal = new ModalBuilder()
         .setCustomId('builds_hero_modal')
-        .setTitle(`🛠️ ${t(locale, 'btn_build')}`);
+        .setTitle(`🛠️ ${i18nService.t(locale, 'btn_build')}`);
 
       const heroInput = new TextInputBuilder()
         .setCustomId('hero_name')
@@ -785,14 +809,14 @@ const dashboardCommand: Command = {
 
         if (userResult.rows.length === 0) {
           await interaction.editReply({
-            content: t(locale, 'error_no_steam'),
+            content: i18nService.t(locale, 'error_no_steam'),
           });
           return;
         }
 
         const userRowAI = userResult.rows[0];
         if (!userRowAI) {
-          await interaction.editReply({ content: t(locale, 'error_no_steam') });
+          await interaction.editReply({ content: i18nService.t(locale, 'error_no_steam') });
           return;
         }
         const steam32Id = parseInt(userRowAI.steam_id);
@@ -800,7 +824,7 @@ const dashboardCommand: Command = {
 
         // Show loading message with translation
         await interaction.editReply({
-          content: `🤖 **${t(locale, 'btn_ai_coach')}**\n\n⏳ ${t(locale, 'loading_ai_analysis')}`,
+          content: `🤖 **${i18nService.t(locale, 'btn_ai_coach')}**\n\n⏳ ${i18nService.t(locale, 'loading_ai_analysis')}`,
         });
 
         // Import services
@@ -814,7 +838,7 @@ const dashboardCommand: Command = {
 
         if (!lastMatch) {
           await interaction.editReply({
-            content: t(locale, 'error_no_matches'),
+            content: i18nService.t(locale, 'error_no_matches'),
           });
           return;
         }
@@ -838,11 +862,11 @@ const dashboardCommand: Command = {
         // Create AI Coach embed with translations
         const coachEmbed = new EmbedBuilder()
           .setColor(lastMatch.result === 'WIN' ? '#4caf50' : '#f44336')
-          .setTitle(`🤖 ${t(locale, 'btn_ai_coach')} - ${lastMatch.heroName}`)
+          .setTitle(`🤖 ${i18nService.t(locale, 'btn_ai_coach')} - ${lastMatch.heroName}`)
           .setDescription(aiAdvice)
           .setThumbnail(`https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/${lastMatch.heroName.toLowerCase().replace(/\s/g, '_')}.png`)
           .setFooter({ 
-            text: t(locale, 'powered_by_gemini'),
+            text: i18nService.t(locale, 'powered_by_gemini'),
             iconURL: 'https://www.gstatic.com/lamda/images/gemini_sparkle_v002_d4735304ff6292a690345.svg'
           })
           .setTimestamp();
@@ -850,34 +874,34 @@ const dashboardCommand: Command = {
         // Add match stats
         coachEmbed.addFields(
           { 
-            name: t(locale, 'match_result'), 
+            name: i18nService.t(locale, 'match_result'), 
             value: lastMatch.result === 'WIN' 
-              ? `🏆 ${t(locale, 'victory')}` 
-              : `💔 ${t(locale, 'defeat')}`, 
+              ? `🏆 ${i18nService.t(locale, 'victory')}` 
+              : `💔 ${i18nService.t(locale, 'defeat')}`, 
             inline: true 
           },
           { 
-            name: t(locale, 'match_kda'), 
+            name: i18nService.t(locale, 'match_kda'), 
             value: `${lastMatch.kills}/${lastMatch.deaths}/${lastMatch.assists} (${kda})`, 
             inline: true 
           },
           { 
-            name: t(locale, 'match_duration'), 
+            name: i18nService.t(locale, 'match_duration'), 
             value: durationText, 
             inline: true 
           },
           { 
-            name: t(locale, 'match_gpm'), 
+            name: i18nService.t(locale, 'match_gpm'), 
             value: lastMatch.gpm.toString(), 
             inline: true 
           },
           { 
-            name: t(locale, 'match_xpm'), 
+            name: i18nService.t(locale, 'match_xpm'), 
             value: lastMatch.xpm.toString(), 
             inline: true 
           },
           { 
-            name: t(locale, 'match_networth'), 
+            name: i18nService.t(locale, 'match_networth'), 
             value: lastMatch.netWorth.toLocaleString(), 
             inline: true 
           }
@@ -888,7 +912,7 @@ const dashboardCommand: Command = {
         console.error('❌ Error generating AI coaching:', error);
         console.error('Stack trace:', (error as Error).stack);
         
-        let errorMessage = t(locale, 'error_generic');
+        let errorMessage = i18nService.t(locale, 'error_generic');
         const errorMsg = (error as Error).message || String(error);
         
         // Specific error messages
@@ -923,14 +947,17 @@ const dashboardCommand: Command = {
 
     // Unknown button
     await interaction.reply({
-      content: t(locale, 'error_generic'),
+      content: i18nService.t(locale, 'error_generic'),
       ephemeral: true,
     });
   },
 
   async handleModal(interaction: ModalSubmitInteraction) {
+    // Initialize dependencies first
+    await initializeDependencies();
+    
     // Get user's locale for all responses
-    const locale = await loadGuildLocale(interaction.guild?.id || '');
+    const locale = await resolveLocale(interaction);
 
     if (interaction.customId === 'connect_steam_modal') {
       const steamInput = interaction.fields.getTextInputValue('steam_id_input');
@@ -977,8 +1004,8 @@ const dashboardCommand: Command = {
           .setDescription('Please confirm this is your account:')
           .addFields(
             { name: '👤 Username', value: profile.name || 'Unknown', inline: true },
-            { name: `🎮 ${t(locale, 'profile_matches')}`, value: String(profile.totalMatches || 0), inline: true },
-            { name: `📊 ${t(locale, 'profile_winrate')}`, value: `${profile.winRate || 0}%`, inline: true },
+            { name: `🎮 ${i18nService.t(locale, 'profile_matches')}`, value: String(profile.totalMatches || 0), inline: true },
+            { name: `📊 ${i18nService.t(locale, 'profile_winrate')}`, value: `${profile.winRate || 0}%`, inline: true },
             { name: '🆔 Steam32 ID', value: steam32Id, inline: false }
           )
           .setThumbnail(profile.avatar || null)
@@ -1004,7 +1031,7 @@ const dashboardCommand: Command = {
       } catch (error) {
         console.error('Error connecting Steam:', error);
         await interaction.editReply({
-          content: t(locale, 'connect_error'),
+          content: i18nService.t(locale, 'connect_error'),
         });
       }
     }
@@ -1055,7 +1082,7 @@ const dashboardCommand: Command = {
       } catch (error) {
         console.error('Error loading hero build:', error);
         await interaction.editReply({
-          content: t(locale, 'error_generic'),
+          content: i18nService.t(locale, 'error_generic'),
         });
       }
     }

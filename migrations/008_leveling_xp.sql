@@ -1,0 +1,19 @@
+CREATE TABLE IF NOT EXISTS user_xp (
+  discord_id VARCHAR(20) PRIMARY KEY,
+  xp BIGINT DEFAULT 0,
+  level INT DEFAULT 1,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS xp_events (
+  id SERIAL PRIMARY KEY,
+  discord_id VARCHAR(20) NOT NULL,
+  source VARCHAR(32) NOT NULL,
+  delta INT NOT NULL,
+  xp_after BIGINT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (discord_id) REFERENCES users(discord_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_xp_events_discord ON xp_events(discord_id);

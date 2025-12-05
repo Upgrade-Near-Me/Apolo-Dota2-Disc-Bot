@@ -271,6 +271,10 @@ This creates:
 - `guild_settings` table - Server language preferences
 - `matches` table - Match history cache
 - `server_stats` table - Leaderboard data
+- `match_imp_scores` table - IMP Score system (NEW v2.2)
+- `match_awards` table - Match awards (NEW v2.2)
+- `user_xp` table - XP & Leveling (NEW v2.2)
+- `xp_events` table - XP event logs (NEW v2.2)
 
 ### 4. Deploy Commands
 
@@ -283,6 +287,7 @@ Registers slash commands:
 - `/dashboard` - Interactive control panel
 - `/setup-apolo-structure` - Create bot channels
 - `/language` - Change server language
+- `/xp-admin` - Grant XP to players (admin only) - NEW v2.2
 
 **Note:** If using `DISCORD_GUILD_ID`, commands appear instantly. Otherwise, wait 5-10 minutes for global deployment.
 

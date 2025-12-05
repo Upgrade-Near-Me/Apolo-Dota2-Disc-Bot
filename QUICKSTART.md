@@ -1,6 +1,13 @@
-# ⚡ Quick Start - Apolo Dota 2 Bot
+# ⚡ Quick Start - Apolo Dota 2 Bot (v2.2)
 
-Get the bot running in 5 minutes with this streamlined guide.
+Get the bot running in 5 minutes with this streamlined guide. Now with **Tier 1 Gamification** features!
+
+**New in v2.2:**
+
+- 📊 IMP Score System (-100 to +100)
+- 🏆 Match Awards (10 achievements)
+- ⭐ XP & Leveling system
+- 📈 Hero Benchmarks with Redis cache
 
 ## Prerequisites
 
@@ -91,7 +98,7 @@ npm start
 
 You should see:
 
-```
+```text
 ✅ Loaded command: dashboard
 ✅ Loaded command: setup-apolo-structure
 ✅ Connected to PostgreSQL database
@@ -161,7 +168,7 @@ npm run db:migrate
 
 ### Create Bot Channels
 
-```
+```bash
 /setup-apolo-structure
 ```
 
@@ -181,32 +188,56 @@ Creates category with 11 channels:
 
 ### Explore Dashboard
 
-```
+```bash
 /dashboard
 ```
 
-Use these buttons:
+Use these buttons (includes **NEW** Tier 1 gamification):
 
 | Button | Function |
 |--------|----------|
 | 🔗 Connect | Link Steam account |
-| 📊 Match | Analyze latest match |
-| 👤 Profile | View statistics |
+| 📊 Match | Analyze latest match + **Awards** |
+| 👤 Profile | View statistics + **XP/Level/IMP** |
 | 📈 Progress | GPM/XPM graphs |
-| 🏆 Leaderboard | Server rankings |
-| 🎯 Meta | Top heroes |
+| 🏆 Leaderboard | Server rankings (now 4 categories) |
+| 🎯 Meta | Top heroes + **Benchmarks** |
 | 🛠️ Build | Item recommendations |
 | ⚖️ Balance | Create teams |
 | 🤖 AI Coach | Personalized tips |
 | 🌍 Language | EN/PT/ES |
 
+**NEW Tier 1 Features (v2.2):**
+
+- 📊 **IMP Score** - Impact metric (-100 to +100) for each match
+- 🏆 **Match Awards** - 10 auto-detected achievements (Godlike, Flash Farmer, etc.)
+- ⭐ **XP & Leveling** - Dynamic progression curve with level system
+- 📈 **Hero Benchmarks** - OpenDota percentile ranking vs your bracket
+
+### Admin Commands (NEW)
+
+```powershell
+# Grant XP to a player (admin only)
+/xp-admin user:@Player amount:500 reason:top_3_leaderboard
+
+# Results in:
+# ✅ XP Granted
+# Player: @User#1234
+# Amount: 500 XP
+# New Level: 15 (2,340/2,600 XP)
+```
+
+**Permissions Required:** `MANAGE_GUILD` (server admin only)
+
 ### Change Language
 
-```
-/language locale:pt   # Portuguese
-/language locale:es   # Spanish
+```bash
+/language locale:pt   # Portuguese (Português)
+/language locale:es   # Spanish (Español)
 /language locale:en   # English
 ```
+
+All Tier 1 features respond in server's selected language!
 
 ## Docker Alternative (Optional)
 
