@@ -1,0 +1,30 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "projects": [
+    {
+      "name": "apolo-dota2-bot",
+      "services": [
+        {
+          "name": "bot",
+          "startCommand": "node src/index.js",
+          "envVars": {
+            "DISCORD_TOKEN": { "required": true },
+            "DISCORD_CLIENT_ID": { "required": true },
+            "DISCORD_GUILD_ID": { "required": false },
+            "DATABASE_URL": { "required": true },
+            "STRATZ_API_TOKEN": { "required": true },
+            "STEAM_API_KEY": { "required": false }
+          }
+        },
+        {
+          "name": "migrations",
+          "startCommand": "node src/database/migrate.js",
+          "restartPolicy": "never",
+          "envVars": {
+            "DATABASE_URL": { "required": true }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "name": "apolo-dota2-bot",
+  "version": "1.0.0",
+  "description": "Discord-native Dota 2 tactical analysis bot with image generation",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "deploy": "tsx src/deploy-commands.ts",
+    "deploy:guilds": "tsx src/deploy-guilds.ts",
+    "db:migrate": "tsx src/database/migrate.ts",
+    "test:unit": "vitest run tests/unit",
+    "test:e2e": "vitest run tests/e2e",
+    "test:coverage": "vitest run --coverage",
+    "test:ui": "vitest --ui",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src/**/*.ts"
+  },
+  "keywords": [
+    "discord",
+    "bot",
+    "dota2",
+    "analytics"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "@napi-rs/canvas": "^0.1.52",
+    "@types/ioredis": "^4.28.10",
+    "discord.js": "^14.14.1",
+    "dotenv": "^16.3.1",
+    "graphql": "^16.8.1",
+    "graphql-request": "^6.1.0",
+    "ioredis": "^5.8.2",
+    "pg": "^8.11.3",
+    "pino": "^9.5.0"
+  },
+  "devDependencies": {
+    "@types/eslint": "^9.6.1",
+    "@types/node": "^24.10.1",
+    "@types/pg": "^8.15.6",
+    "@typescript-eslint/eslint-plugin": "^8.48.1",
+    "@typescript-eslint/parser": "^8.48.1",
+    "@vitest/coverage-v8": "^4.0.15",
+    "@vitest/ui": "^4.0.15",
+    "eslint": "^8.56.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.15"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

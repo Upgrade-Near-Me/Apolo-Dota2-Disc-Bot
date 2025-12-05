@@ -1,0 +1,58 @@
+{
+  "embed_title": "🎮 APOLO - Panel de Control Dota2",
+  "embed_description": "**¡Bienvenido a tu asistente táctico de Dota2!**\n\nUsa los botones de abajo para acceder a características exclusivas:",
+  "embed_footer": "Todas las interacciones son privadas (DM)",
+  
+  "btn_connect": "🔗 Conectar Steam",
+  "btn_match": "📊 Análisis de Partida",
+  "btn_profile": "👤 Perfil del Jugador",
+  "btn_progress": "📈 Rastreador de Progreso",
+  "btn_leaderboard": "🏆 Clasificación",
+  "btn_meta": "🎯 Héroes Meta",
+  "btn_build": "🛠️ Builds de Héroe",
+  "btn_balance": "⚖️ Balanceador de Equipos",
+  "btn_ai_coach": "🤖 Coach IA",
+  "btn_help": "ℹ️ Ayuda",
+  
+  "connect_modal_title": "Conectar Tu Cuenta Steam",
+  "connect_modal_label": "ID Steam / URL del Perfil / Steam64",
+  "connect_success": "✅ ¡Cuenta Steam conectada con éxito!",
+  "connect_error": "❌ No se pudo conectar tu cuenta Steam. Verifica el ID.",
+  
+  "error_generic": "❌ Ocurrió un error. Intenta de nuevo más tarde.",
+  "error_no_steam": "❌ No hay cuenta Steam vinculada. Usa el botón **🔗 Conectar Steam** primero.",
+  "error_private_profile": "❌ Tu perfil de Dota 2 es privado. Por favor, hazlo público en la configuración de Steam.",
+  "error_api_unavailable": "❌ Los servicios de Dota 2 están temporalmente no disponibles. Intenta de nuevo en unos minutos.",
+  "error_no_matches": "❌ No se encontraron partidas. Juega una partida primero e intenta de nuevo.",
+  
+  "match_victory": "VICTORIA",
+  "match_defeat": "DERROTA",
+  "match_duration": "Duración",
+  "match_loading": "🔄 Cargando datos de la partida...",
+  "match_result": "Resultado",
+  "match_kda": "KDA",
+  "match_gpm": "OPM",
+  "match_xpm": "XPM",
+  "match_networth": "Patrimonio Neto",
+  "victory": "Victoria",
+  "defeat": "Derrota",
+  "loading_ai_analysis": "Analizando tu última partida... Esto puede tomar unos segundos.",
+  "powered_by_gemini": "Powered by Google Gemini AI",
+  
+  "profile_title": "👤 Perfil del Jugador",
+  "profile_rank": "Rango",
+  "profile_mmr": "MMR",
+  "profile_matches": "Partidas Totales",
+  "profile_winrate": "Tasa de Victoria",
+  
+  "welcome_user": "¡Bienvenido, {username}!",
+  "coach_greeting": "¡Hola {username}, soy tu Coach de IA de Dota 2!",
+  "rank_info": "Actualmente estás clasificado {rank} con {mmr} de MMR.",
+  
+  "dashboard_btn_help": "ℹ️ Ayuda",
+  "dashboard_btn_balance": "⚖️ Balancear",
+  "dashboard_btn_progress": "📈 Progreso",
+  "dashboard_btn_leaderboard": "🏆 Clasificación",
+  "dashboard_btn_meta": "🎯 Meta",
+  "dashboard_btn_build": "🛠️ Builds"
+}

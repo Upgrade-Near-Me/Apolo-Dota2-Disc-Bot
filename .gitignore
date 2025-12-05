@@ -1,0 +1,21 @@
+node_modules/
+.env
+*.log
+.DS_Store
+
+# TypeScript
+dist/
+*.tsbuildinfo
+
+# Testing
+coverage/
+.vitest/
+
+# Temporary files
+temp/
+
+# Images (exclude assets)
+*.png
+*.jpg
+!assets/*.png
+!assets/*.jpg

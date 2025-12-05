@@ -1,0 +1,58 @@
+{
+  "embed_title": "🎮 APOLO - Dota2 Control Panel",
+  "embed_description": "**Welcome to your tactical Dota2 assistant!**\n\nUse the buttons below to access exclusive features:",
+  "embed_footer": "All interactions are private (DM)",
+  
+  "btn_connect": "🔗 Connect Steam",
+  "btn_match": "📊 Match Analysis",
+  "btn_profile": "👤 Player Profile",
+  "btn_progress": "📈 Progress Tracker",
+  "btn_leaderboard": "🏆 Leaderboard",
+  "btn_meta": "🎯 Meta Heroes",
+  "btn_build": "🛠️ Hero Builds",
+  "btn_balance": "⚖️ Team Balancer",
+  "btn_ai_coach": "🤖 AI Coach",
+  "btn_help": "ℹ️ Help",
+  
+  "connect_modal_title": "Connect Your Steam Account",
+  "connect_modal_label": "Steam ID / Profile URL / Steam64",
+  "connect_success": "✅ Steam account connected successfully!",
+  "connect_error": "❌ Could not connect your Steam account. Please verify the ID.",
+  
+  "error_generic": "❌ An error occurred. Please try again later.",
+  "error_no_steam": "❌ No Steam account linked. Use the **🔗 Connect Steam** button first.",
+  "error_private_profile": "❌ Your Dota 2 profile is private. Please make it public in Steam settings.",
+  "error_api_unavailable": "❌ Dota 2 services are temporarily unavailable. Try again in a few minutes.",
+  "error_no_matches": "❌ No matches found. Play a match first and try again.",
+  
+  "match_victory": "VICTORY",
+  "match_defeat": "DEFEAT",
+  "match_duration": "Duration",
+  "match_loading": "🔄 Loading match data...",
+  "match_result": "Result",
+  "match_kda": "KDA",
+  "match_gpm": "GPM",
+  "match_xpm": "XPM",
+  "match_networth": "Net Worth",
+  "victory": "Victory",
+  "defeat": "Defeat",
+  "loading_ai_analysis": "Analyzing your last match... This may take a few seconds.",
+  "powered_by_gemini": "Powered by Google Gemini AI",
+  
+  "profile_title": "👤 Player Profile",
+  "profile_rank": "Rank",
+  "profile_mmr": "MMR",
+  "profile_matches": "Total Matches",
+  "profile_winrate": "Win Rate",
+  
+  "welcome_user": "Welcome, {username}!",
+  "coach_greeting": "Hello {username}, I'm your Dota 2 AI Coach!",
+  "rank_info": "You are currently ranked {rank} with {mmr} MMR.",
+  
+  "dashboard_btn_help": "ℹ️ Help",
+  "dashboard_btn_balance": "⚖️ Balance",
+  "dashboard_btn_progress": "📈 Progress",
+  "dashboard_btn_leaderboard": "🏆 Leaderboard",
+  "dashboard_btn_meta": "🎯 Meta",
+  "dashboard_btn_build": "🛠️ Builds"
+}

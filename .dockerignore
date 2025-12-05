@@ -1,0 +1,12 @@
+node_modules
+npm-debug.log
+.git
+.gitignore
+.env
+assets
+*.png
+*.jpg
+README.md
+SETUP.md
+PROJECT_SUMMARY.md
+QUICKSTART.md
