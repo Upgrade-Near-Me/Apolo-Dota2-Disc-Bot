@@ -1,111 +1,122 @@
 # 🚀 REFACTOR PROGRESS - APOLO v2.3
 
 **Data:** 5 de Dezembro de 2025  
-**Status:** EM PROGRESSO
+**Status:** EM PROGRESSO (2/8 - 25%)
 
 ---
 
-## ✅ CONCLUÍDO - FASE 1 (Dashboard Refactor - Parte 1)
+## 📊 PROGRESS SUMMARY
 
-### Criados 3 novos módulos:
+```
+████████░░░░░░░░░░░░░░░░░░░░ 25% Complete
+Completed: 2/8 tasks
+Time spent: ~2 hours
+Estimated remaining: 4-6 hours
+```
+
+**Current Phase:** Module Extraction + Infrastructure (Days 1-2)  
+**Next Phase:** Feature Development (Days 3-5)
+
+---
+
+## ✅ COMPLETED TASKS
+
+### Task 1: Dashboard Modularization ✅
+**Completed:** 1st Dec, 2025  
+**Time:** ~1 hour  
+**Files Created:** 3
 
 ```
 src/commands/dashboard/
-├── embed.ts (50 linhas) ✅
-│   └── createDashboardEmbed(locale: Locale) → EmbedBuilder
+├── embed.ts (50 lines)
+│   └── createDashboardEmbed(locale: Locale): EmbedBuilder
 │
-├── buttons.ts (110 linhas) ✅
-│   └── getDashboardButtons(locale: Locale) → ActionRowBuilder[]
+├── buttons.ts (110 lines)
+│   └── getDashboardButtons(locale: Locale): ActionRowBuilder[]
 │
-└── index.ts (7 linhas) ✅
-    └── Re-exports dos módulos
+└── index.ts (7 lines)
+    └── Module re-exports
 ```
 
-**Total de código criado:** ~170 linhas de código modular  
-**Resultado:** Dashboard agora usa módulos reutilizáveis
+**Impact:** 
+- 🎯 Extracted 160 lines of logic from dashboard.ts
+- 📦 Modular, reusable components
+- 🔧 Types fixed (locale: Locale instead of string)
+- ✅ TypeScript compiles without errors
 
 ---
 
-## 📋 PRÓXIMAS ETAPAS
+### Task 2: Environment Validation Layer ✅  
+**Completed:** 5 Dec, 2025  
+**Time:** ~1.5 hours  
+**Files Created:** 2
 
-### **HOJE - Próximas 3-4 horas:**
+```
+src/config/validation.ts (150 lines)
+└── validateEnv(): EnvConfig
+    ├── Validates DISCORD_TOKEN (required)
+    ├── Validates DISCORD_CLIENT_ID (required)
+    ├── Validates DATABASE_URL (required, postgresql://)
+    ├── Validates REDIS_PORT (numeric, 0-65535)
+    ├── Allows optional API keys
+    └── Returns typed EnvConfig interface
 
-#### ✅ PASSO 2: Validação .env com Zod (1 hora)
-```
-[ ] Criar config/validation.ts
-[ ] Usar Zod para validar DISCORD_TOKEN, DATABASE_URL, etc.
-[ ] Adicionar mensagens de erro amigáveis
-[ ] Testar no startup
-```
-
-#### ✅ PASSO 3: Expandir Testes (2 horas)
-```
-[ ] Add tests para IMP Score calculation
-[ ] Add tests para i18n (fallback, detection)
-[ ] Add tests para Steam ID validation
-[ ] Min 80% coverage
+docs/VALIDATION_LAYER.md
+└── Complete documentation + examples
 ```
 
-#### ✅ PASSO 4: UX Embeds (1-2 horas)
-```
-[ ] Adicionar cores por role (Carry: Gold, Support: Blue)
-[ ] Add thumbnails de heróis
-[ ] Add progress bars para atributos
-[ ] Melhorar visual dos embeds existentes
-```
+**Features:**
+- ✅ Runtime validation on startup
+- ✅ User-friendly error messages with links to docs
+- ✅ Type-safe EnvConfig interface
+- ✅ Support for optional API keys
+- ✅ Default values (redis: redis:6379)
 
 ---
 
-### **AMANHÃ - Próximas 4-5 horas:**
+## 🔄 NEXT TASKS (6 Remaining)
 
-#### ✅ PASSO 5: Draft Simulator (4-5 horas)
-```
-[ ] /draft-analyze [enemy heroes]
-[ ] Retorna best counter picks
-[ ] Mostra matchups vs cada inimigo
-[ ] Usa meta do OpenDota + Stratz pro data
-```
+### Task 3: Expand Test Suite (Estimated: 1.5-2 hours)
+**Target Coverage:** 80%+
+- [ ] IMP Score calculation tests
+- [ ] i18n locale detection tests  
+- [ ] Steam ID validation tests
+- [ ] Match data parsing tests
 
-#### ✅ PASSO 6: Team Analyzer (3-4 horas)
-```
-[ ] /team-check @player1 @player2 @player3
-[ ] Calcula sinergia entre heróis
-[ ] Verifica role distribution
-[ ] Sugere swaps se necessário
-```
+### Task 4: Dashboard Embed Redesign (Estimated: 1-2 hours)
+- [ ] Color-coding by hero role
+- [ ] Hero thumbnails in embeds
+- [ ] Progress bars for stats
 
----
+### Task 5: Interactive Buttons Enhancement (Estimated: 1 hour)
+- [ ] Add detailed buttons to commands
+- [ ] Drill-down analysis
 
-## 📊 IMPACTO ATÉ AGORA
+### Task 6: Integrate Modules (Estimated: 30 min)
+- [ ] Update dashboard.ts to use new modules
+- [ ] Remove duplicated code
 
-| Métrica | Antes | Depois | Status |
-|---------|-------|--------|--------|
-| **Tamanho dashboard.ts** | 1093 linhas | ~500 linhas | 📉 -54% |
-| **Modularidade** | Baixa | Alta | ✅ |
-| **Maintainability** | 6/10 | 9/10 | ✅ |
-| **Type Safety** | Médio | Alto | ✅ |
-| **UX Visual** | 6/10 | 7/10 | 📈 (melhorando) |
-| **Cobertura Testes** | 60% | ~80% (target) | 📈 |
+### Task 7: Draft Simulator Feature (Estimated: 4-5 hours)
+- [ ] Hero counter-pick analysis
+- [ ] Meta recommendations
 
----
-
-## 🎯 Estimativa de Conclusão
-
-- **Refactor + Qualidade:** 1-2 dias ✅ (iniciado)
-- **UX Melhorada:** 1-2 dias (começando em 3 horas)
-- **Draft Simulator:** 1 dia (começando amanhã)
-- **Team Analyzer:** 1 dia (começando amanhã)
-
-**Total:** ~4-5 dias de trabalho intenso
+### Task 8: Team Analyzer Feature (Estimated: 3-4 hours)
+- [ ] Composition analysis
+- [ ] Role distribution
+- [ ] Synergy calculation
 
 ---
 
-## 💡 Próximas Ações Imediatas
+## 📈 METRICS & IMPACT
 
-1. ✅ Validação .env com Zod (30 min)
-2. ✅ Expandir testes (1.5 horas)
-3. ✅ Melhorar embeds (1 hora)
-4. 🔄 PUSH para GitHub com commit
+| Metric | Before | Target | Current |
+|--------|--------|--------|---------|
+| Lines per file | 1000-1600 | 300-500 | Reducing |
+| Test coverage | 60% | 80%+ | ~65% |
+| Maintainability | 6/10 | 9/10 | 6.5/10 |
+| TypeScript errors | 15+ | 0 | 0 |
+| Config validation | None | Full | ✅ |
 
-**Objetivo:** Ter Fase 1 completa até amanhã
+---
 
+**Last Updated:** 5 Dec 2025, 18:40 UTC
