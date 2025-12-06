@@ -1,0 +1,84 @@
+# Prometheus Configuration - Production
+# APOLO Dota 2 Bot Monitoring
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'apolo-dota2-prod'
+
+# ==========================================
+# Scrape Configs
+# ==========================================
+
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # APOLO Bot Metrics
+  # Bot exposes metrics on port 9100 (internal network)
+  - job_name: 'apolo-bot'
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    static_configs:
+      - targets: ['bot:9100']
+        labels:
+          service: 'discord-bot'
+          env: 'production'
+    
+    # Retry policy for bot metrics
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+      - source_labels: [__scheme__]
+        target_label: scheme
+
+  # Database health check (if exposed as metrics)
+  # Uncomment when postgres exporter is added
+  # - job_name: 'postgres'
+  #   static_configs:
+  #     - targets: ['postgres-exporter:9187']
+  #   relabel_configs:
+  #     - source_labels: [__address__]
+  #       target_label: instance
+
+  # Redis health check (if exposed as metrics)
+  # Uncomment when redis exporter is added
+  # - job_name: 'redis'
+  #   static_configs:
+  #     - targets: ['redis-exporter:9121']
+  #   relabel_configs:
+  #     - source_labels: [__address__]
+  #       target_label: instance
+
+# ==========================================
+# Alerting Rules (Optional)
+# ==========================================
+
+# Uncomment to add alerting rules
+# rule_files:
+#   - '/etc/prometheus/rules/*.yml'
+
+# alerting:
+#   alertmanager:
+#     - static_configs:
+#         - targets: []
+
+# ==========================================
+# Remote Storage (Optional - for HA)
+# ==========================================
+
+# remote_write:
+#   - url: "http://remote-prometheus:9009/api/v1/write"
+
+# ==========================================
+# Notes:
+# ==========================================
+# 1. Bot metrics endpoint: http://bot:9100/metrics
+# 2. Scrape interval: 30s (can be increased for lower load)
+# 3. All targets are internal network (apolo-net)
+# 4. No external storage configured (uses local TSDB)
+# 5. Data retention: 30 days (set in docker-compose.yml)
