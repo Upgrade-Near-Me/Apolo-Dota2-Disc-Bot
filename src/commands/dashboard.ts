@@ -799,76 +799,69 @@ const dashboardCommand: Command = {
 
     // Draft Simulator
     if (buttonId === 'dashboard_draft') {
-      await interaction.deferReply({ ephemeral: true });
+      // Show modal for hero selection
+      const modal = new ModalBuilder()
+        .setCustomId('draft_simulator_modal')
+        .setTitle('🎯 Draft Simulator');
 
-      try {
-        const availableHeroes = draftSimulator.getAvailableHeroes();
-        
-        const draftEmbed = new EmbedBuilder()
-          .setTitle('🎯 Draft Simulator')
-          .setDescription('*Advanced hero matchup analysis and counter-pick detection*\n\nAvailable heroes: ' + availableHeroes.length)
-          .addFields(
-            { 
-              name: '📊 Features', 
-              value: '• Matchup scoring (0-100)\n• Counter-pick detection\n• Team synergy analysis\n• Role-based recommendations', 
-              inline: false 
-            },
-            { 
-              name: '🎮 How it works', 
-              value: '1. Provide enemy team heroes\n2. Select your role\n3. Get counter recommendations\n4. See matchup scores & synergy', 
-              inline: false 
-            }
-          )
-          .setFooter({ text: 'Powered by Draft Simulator v1.0' })
-          .setTimestamp();
-        applyTheme(draftEmbed, 'STRATEGY');
+      const enemyHeroesInput = new TextInputBuilder()
+        .setCustomId('enemy_heroes')
+        .setLabel('Enemy Team Heroes (comma separated)')
+        .setPlaceholder('Example: Invoker, Pudge, Anti-Mage, Crystal Maiden, Earthshaker')
+        .setStyle(TextInputStyle.Paragraph)
+        .setRequired(true)
+        .setMinLength(3)
+        .setMaxLength(300);
 
-        await dmOrEphemeral(interaction, { embeds: [draftEmbed] });
-      } catch (error) {
-        console.error('Error loading draft simulator:', error);
-        await interaction.editReply({
-          content: i18nService.t(locale, 'error_generic'),
-        });
-      }
+      const yourRoleInput = new TextInputBuilder()
+        .setCustomId('your_role')
+        .setLabel('Your Preferred Role')
+        .setPlaceholder('Options: Carry, Mid, Offlane, Support, Hard Support')
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true)
+        .setMinLength(3)
+        .setMaxLength(20);
+
+      const row1 = new ActionRowBuilder<TextInputBuilder>().addComponents(enemyHeroesInput);
+      const row2 = new ActionRowBuilder<TextInputBuilder>().addComponents(yourRoleInput);
+
+      modal.addComponents(row1, row2);
+
+      await interaction.showModal(modal);
       return;
     }
 
     // Team Analyzer
     if (buttonId === 'dashboard_team') {
-      await interaction.deferReply({ ephemeral: true });
+      // Show modal for team composition input
+      const modal = new ModalBuilder()
+        .setCustomId('team_analyzer_modal')
+        .setTitle('👥 Team Analyzer');
 
-      try {
-        const teamEmbed = new EmbedBuilder()
-          .setTitle('👥 Team Analyzer')
-          .setDescription('*Comprehensive team composition and synergy analysis*\n\nAnalyze team strengths, weaknesses, and potential')
-          .addFields(
-            { 
-              name: '📊 Analysis Metrics', 
-              value: '• Role distribution balance\n• Team synergy scoring\n• Strength/weakness identification\n• Skill level assessment', 
-              inline: false 
-            },
-            { 
-              name: '🎯 Recommendations', 
-              value: '• Suggested role adjustments\n• Counter-coverage gaps\n• Hero pool considerations\n• Team strategy insights', 
-              inline: false 
-            },
-            { 
-              name: '⚖️ Comparison', 
-              value: '• Head-to-head team analysis\n• Win probability estimation\n• Key battle scenarios', 
-              inline: false 
-            }
-          )
-          .setFooter({ text: 'Powered by Team Analyzer v1.0' })
-          .setTimestamp();
-        applyTheme(teamEmbed, 'TEAM');
+      const team1Input = new TextInputBuilder()
+        .setCustomId('team1_heroes')
+        .setLabel('Team 1 Heroes (comma separated)')
+        .setPlaceholder('Example: Invoker, Pudge, Anti-Mage, Crystal Maiden, Earthshaker')
+        .setStyle(TextInputStyle.Paragraph)
+        .setRequired(true)
+        .setMinLength(3)
+        .setMaxLength(300);
 
-        await dmOrEphemeral(interaction, { embeds: [teamEmbed] });
-      } catch (error) {
-        console.error('Error loading team analyzer:', error);
-        await interaction.editReply({
-          content: i18nService.t(locale, 'error_generic'),
-        });
-      }
+      const team2Input = new TextInputBuilder()
+        .setCustomId('team2_heroes')
+        .setLabel('Team 2 Heroes (comma separated)')
+        .setPlaceholder('Example: Phantom Assassin, Storm Spirit, Axe, Lion, Jakiro')
+        .setStyle(TextInputStyle.Paragraph)
+        .setRequired(true)
+        .setMinLength(3)
+        .setMaxLength(300);
+
+      const row1 = new ActionRowBuilder<TextInputBuilder>().addComponents(team1Input);
+      const row2 = new ActionRowBuilder<TextInputBuilder>().addComponents(team2Input);
+
+      modal.addComponents(row1, row2);
+
+      await interaction.showModal(modal);
       return;
     }
 
@@ -1184,6 +1177,125 @@ const dashboardCommand: Command = {
         console.error('Error loading hero build:', error);
         await interaction.editReply({
           content: i18nService.t(locale, 'error_generic'),
+        });
+      }
+    }
+
+    // Draft Simulator Modal Handler
+    if (interaction.customId === 'draft_simulator_modal') {
+      const enemyHeroes = interaction.fields.getTextInputValue('enemy_heroes');
+      const yourRole = interaction.fields.getTextInputValue('your_role');
+      
+      await interaction.deferReply({ ephemeral: true });
+
+      try {
+        // Parse enemy heroes (split by comma, trim spaces)
+        const enemyHeroList = enemyHeroes.split(',').map(h => h.trim()).filter(h => h.length > 0);
+        
+        // Get draft recommendations
+        const recommendations = draftSimulator.getDraftRecommendations(enemyHeroList, yourRole);
+        
+        // Build results embed
+        const draftEmbed = new EmbedBuilder()
+          .setTitle('🎯 Draft Analysis Results')
+          .setDescription(`**Your Role:** ${yourRole}\n**Enemy Team:** ${enemyHeroList.join(', ')}\n\n*Counter-pick recommendations based on matchup analysis*`)
+          .addFields(
+            { 
+              name: '⭐ Top Recommendations', 
+              value: recommendations.topPicks.map((pick: any, i: number) => 
+                `${i + 1}. **${pick.hero}** (Score: ${pick.score}/100)\n   └ ${pick.reason}`
+              ).join('\n\n') || 'No recommendations available', 
+              inline: false 
+            },
+            { 
+              name: '📊 Team Synergy', 
+              value: `Synergy Score: **${recommendations.synergyScore}/100**\n${recommendations.synergyNotes}`, 
+              inline: false 
+            },
+            {
+              name: '💡 Strategy Tips',
+              value: recommendations.strategyTips.map((tip: string) => `• ${tip}`).join('\n') || 'No tips available',
+              inline: false
+            }
+          )
+          .setFooter({ text: 'Draft Simulator v1.0 • Matchup data updated daily' })
+          .setTimestamp();
+        applyTheme(draftEmbed, 'STRATEGY');
+
+        await interaction.editReply({ embeds: [draftEmbed] });
+      } catch (error) {
+        console.error('Error analyzing draft:', error);
+        await interaction.editReply({
+          content: '❌ Error analyzing draft. Please check hero names and try again.\n\n**Example format:** Invoker, Pudge, Anti-Mage',
+        });
+      }
+    }
+
+    // Team Analyzer Modal Handler
+    if (interaction.customId === 'team_analyzer_modal') {
+      const team1Heroes = interaction.fields.getTextInputValue('team1_heroes');
+      const team2Heroes = interaction.fields.getTextInputValue('team2_heroes');
+      
+      await interaction.deferReply({ ephemeral: true });
+
+      try {
+        // Parse team compositions
+        const team1List = team1Heroes.split(',').map(h => h.trim()).filter(h => h.length > 0);
+        const team2List = team2Heroes.split(',').map(h => h.trim()).filter(h => h.length > 0);
+        
+        // Analyze teams using simplified wrapper
+        const analysis = teamAnalyzer.analyzeTeamCompositionSimple(team1List, team2List);
+        
+        // Build results embed
+        const teamEmbed = new EmbedBuilder()
+          .setTitle('👥 Team Analysis Results')
+          .setDescription(`**Team 1:** ${team1List.join(', ')}\n**Team 2:** ${team2List.join(', ')}\n\n*Comprehensive team composition analysis*`)
+          .addFields(
+            { 
+              name: '🏆 Win Probability', 
+              value: `Team 1: **${analysis.team1WinRate}%**\nTeam 2: **${analysis.team2WinRate}%**\n\n${analysis.favoredTeam}`, 
+              inline: false 
+            },
+            { 
+              name: '💪 Team 1 Strengths', 
+              value: analysis.team1Strengths.map((s: string) => `• ${s}`).join('\n') || 'Analyzing...', 
+              inline: true 
+            },
+            { 
+              name: '⚠️ Team 1 Weaknesses', 
+              value: analysis.team1Weaknesses.map((w: string) => `• ${w}`).join('\n') || 'Analyzing...', 
+              inline: true 
+            },
+            { 
+              name: '💪 Team 2 Strengths', 
+              value: analysis.team2Strengths.map((s: string) => `• ${s}`).join('\n') || 'Analyzing...', 
+              inline: true 
+            },
+            { 
+              name: '⚠️ Team 2 Weaknesses', 
+              value: analysis.team2Weaknesses.map((w: string) => `• ${w}`).join('\n') || 'Analyzing...', 
+              inline: true 
+            },
+            {
+              name: '🎯 Key Matchups',
+              value: analysis.keyMatchups.map((m: string) => `• ${m}`).join('\n') || 'No critical matchups',
+              inline: false
+            },
+            {
+              name: '💡 Strategic Recommendations',
+              value: analysis.recommendations.map((r: string) => `• ${r}`).join('\n') || 'No recommendations',
+              inline: false
+            }
+          )
+          .setFooter({ text: 'Team Analyzer v1.0 • Analysis based on hero synergies' })
+          .setTimestamp();
+        applyTheme(teamEmbed, 'TEAM');
+
+        await interaction.editReply({ embeds: [teamEmbed] });
+      } catch (error) {
+        console.error('Error analyzing teams:', error);
+        await interaction.editReply({
+          content: '❌ Error analyzing teams. Please check hero names and try again.\n\n**Example format:** Invoker, Pudge, Anti-Mage',
         });
       }
     }

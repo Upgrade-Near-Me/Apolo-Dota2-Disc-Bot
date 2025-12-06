@@ -425,6 +425,64 @@ export function getHeroInfo(heroName: string) {
   return HERO_DATABASE[heroName] || null;
 }
 
+/**
+ * Get draft recommendations for a specific role against enemy team
+ * Simplified wrapper for dashboard integration
+ */
+export function getDraftRecommendations(enemyHeroes: string[], yourRole: string) {
+  // Get counter picks for each enemy hero
+  const allCounterPicks: string[] = [];
+  enemyHeroes.forEach(enemy => {
+    const counters = findCounterPicks(enemy);
+    allCounterPicks.push(...counters);
+  });
+
+  // Count frequency of counter picks (heroes that counter multiple enemies are better)
+  const counterFrequency: Record<string, number> = {};
+  allCounterPicks.forEach(hero => {
+    counterFrequency[hero] = (counterFrequency[hero] || 0) + 1;
+  });
+
+  // Filter by role if specified
+  const roleFilter = yourRole.toLowerCase();
+  const filteredHeroes = Object.entries(counterFrequency)
+    .filter(([hero]) => {
+      if (roleFilter === 'any') return true;
+      const heroInfo = HERO_DATABASE[hero];
+      if (!heroInfo) return false;
+      return heroInfo.roles.some(r => r.toLowerCase().includes(roleFilter));
+    })
+    .sort(([, a], [, b]) => b - a) // Sort by frequency
+    .slice(0, 5);
+
+  // Build top picks
+  const topPicks = filteredHeroes.map(([hero, frequency]) => {
+    const heroInfo = HERO_DATABASE[hero];
+    const score = Math.min(100, 50 + (frequency * 15)); // Base 50 + 15 per counter
+    return {
+      hero,
+      score,
+      reason: heroInfo ? `Counters ${frequency} enemy hero(es). Strong against ${heroInfo.strengths.slice(0, 2).join(', ')}` : `Counters ${frequency} enemy hero(es)`
+    };
+  });
+
+  // Calculate team synergy (simplified)
+  const firstPick = topPicks[0];
+  const synergyScore = firstPick ? 65 + (firstPick.score - 50) : 50;
+
+  return {
+    topPicks,
+    synergyScore,
+    synergyNotes: `Good counter coverage against enemy team. ${topPicks.length} strong picks available for ${yourRole} role.`,
+    strategyTips: [
+      `Focus on ${yourRole} role fundamentals and farming patterns`,
+      `Counter ${enemyHeroes[0] || 'enemy carry'} with recommended picks`,
+      `Coordinate ganks with team during enemy power spikes`,
+      `Secure key objectives and maintain map control`
+    ]
+  };
+}
+
 export default {
   calculateMatchupScore,
   analyzeTeamSynergy,
@@ -434,4 +492,5 @@ export default {
   calculateTeamPowerLevel,
   getAvailableHeroes,
   getHeroInfo,
+  getDraftRecommendations,
 };

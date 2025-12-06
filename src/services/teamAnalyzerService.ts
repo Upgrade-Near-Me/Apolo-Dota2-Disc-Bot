@@ -459,6 +459,84 @@ export function compareTeams(
   };
 }
 
+/**
+ * Analyze team composition from hero names (simplified for dashboard)
+ * Wrapper function for easy integration
+ */
+export function analyzeTeamCompositionSimple(
+  team1Heroes: string[],
+  team2Heroes: string[]
+) {
+  // Convert hero names to TeamMember format (simplified without user data)
+  const team1Members: TeamMember[] = team1Heroes.map((hero, i) => ({
+    userId: `team1_${i}`,
+    username: `Player ${i + 1}`,
+    hero,
+    role: inferRoleFromHero(hero)
+  }));
+
+  const team2Members: TeamMember[] = team2Heroes.map((hero, i) => ({
+    userId: `team2_${i}`,
+    username: `Player ${i + 1}`,
+    hero,
+    role: inferRoleFromHero(hero)
+  }));
+
+  // Use existing compareTeams function
+  const comparison = compareTeams(team1Members, team2Members, 'Team 1', 'Team 2');
+
+  // Calculate win probabilities based on scores
+  const team1Score = comparison.team1_analysis.composition_score * 0.33 +
+    comparison.team1_analysis.role_balance_score * 0.33 +
+    comparison.team1_analysis.synergy_score * 0.34;
+
+  const team2Score = comparison.team2_analysis.composition_score * 0.33 +
+    comparison.team2_analysis.role_balance_score * 0.33 +
+    comparison.team2_analysis.synergy_score * 0.34;
+
+  const total = team1Score + team2Score;
+  const team1WinRate = Math.round((team1Score / total) * 100);
+  const team2WinRate = 100 - team1WinRate;
+
+  const favoredTeam = team1WinRate > team2WinRate
+    ? `✅ Team 1 is favored (+${team1WinRate - team2WinRate}% advantage)`
+    : `✅ Team 2 is favored (+${team2WinRate - team1WinRate}% advantage)`;
+
+  return {
+    team1WinRate,
+    team2WinRate,
+    favoredTeam,
+    team1Strengths: comparison.team1_analysis.strengths,
+    team1Weaknesses: comparison.team1_analysis.weaknesses,
+    team2Strengths: comparison.team2_analysis.strengths,
+    team2Weaknesses: comparison.team2_analysis.weaknesses,
+    keyMatchups: [
+      `${team1Heroes[0] || 'Carry'} vs ${team2Heroes[0] || 'Carry'} (farm battle)`,
+      `${team1Heroes[1] || 'Mid'} vs ${team2Heroes[1] || 'Mid'} (mid control)`,
+      `Team fights: ${comparison.comparison.synergy_advantage} has better synergy`
+    ],
+    recommendations: [
+      ...comparison.team1_analysis.recommendations.map(r => `Team 1: ${r}`).slice(0, 2),
+      ...comparison.team2_analysis.recommendations.map(r => `Team 2: ${r}`).slice(0, 2)
+    ]
+  };
+}
+
+/**
+ * Infer role from hero name (simple heuristic)
+ */
+function inferRoleFromHero(hero: string): string {
+  // Simple role inference - in real scenario would use hero database
+  const carries = ['Anti-Mage', 'Phantom-Assassin', 'Spectre', 'Juggernaut', 'Drow-Ranger'];
+  const mids = ['Invoker', 'Storm-Spirit', 'Queen-of-Pain', 'Shadow-Fiend', 'Puck'];
+  const supports = ['Crystal-Maiden', 'Lion', 'Shadow-Shaman', 'Lich', 'Rubick', 'Earthshaker'];
+
+  if (carries.includes(hero)) return 'carry';
+  if (mids.includes(hero)) return 'mid';
+  if (supports.includes(hero)) return 'hard_support';
+  return 'offlane'; // Default
+}
+
 export default {
   analyzeTeamComposition,
   calculateTeamSynergy,
@@ -468,4 +546,5 @@ export default {
   analyzeTeamSkillLevel,
   analyzeCompleteTeam,
   compareTeams,
+  analyzeTeamCompositionSimple,
 };
