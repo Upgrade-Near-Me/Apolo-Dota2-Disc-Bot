@@ -231,13 +231,12 @@
   "menu_settings_about": "About",
   "menu_settings_about_desc": "Bot information",
   "menu_settings_help": "Help",
-  "menu_settings_help_desc": "How to use"
-   "menu_settings_help_desc": "How to use",
-   "menu_settings_edit": "Edit",
-   "menu_settings_edit_desc": "Quick edits without typing",
+  "menu_settings_help_desc": "How to use",
+  "menu_settings_edit": "Edit",
+  "menu_settings_edit_desc": "Quick edits without typing",
 
-   "menu_edit_title": "✏️ Edit Center",
-   "menu_edit_description": "Update your preferences without typing any commands",
+  "menu_edit_title": "✏️ Edit Center",
+  "menu_edit_description": "Update your preferences without typing any commands",
    "menu_edit_profile": "Profile",
    "menu_edit_profile_desc": "Edit name/avatar/Steam link",
    "menu_edit_language": "Language",
@@ -246,5 +245,6 @@
    "menu_edit_notifications_desc": "Adjust alerts & DMs",
    "menu_edit_privacy": "Privacy",
    "menu_edit_privacy_desc": "Visibility and DM privacy",
-   "menu_edit_builds": "Builds",
-   "menu_edit_builds_desc": "Save/update/delete builds",
+  "menu_edit_builds": "Builds",
+  "menu_edit_builds_desc": "Save/update/delete builds"
+}
