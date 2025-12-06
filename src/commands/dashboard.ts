@@ -27,6 +27,8 @@ import {
 } from 'discord.js';
 import { resolveLocale } from '../utils/i18n.js';
 import { i18nService } from '../I18nService.js';
+import { CATEGORY_COLORS, applyTheme } from '../utils/embedTheme.js';
+import { createActionButtons } from '../utils/advancedButtons.js';
 import type { Command } from '../types/dota.js';
 import type { Pool } from 'pg';
 
@@ -76,7 +78,6 @@ const dashboardCommand: Command = {
     // ===== MODERN ENTERPRISE DASHBOARD 2024/2025 =====
     // Cyberpunk Aesthetic with Clear Visual Hierarchy
     const embed = new EmbedBuilder()
-      .setColor('#00d9ff') // Cyan Premium (Midjourney/MEE6 style)
       .setTitle('🎮 APOLO COMMAND CENTER')
       .setDescription('**Painel de Controle Tático • Selecione um módulo abaixo**\n\n*Sistema de análise avançada com IA Gemini integrada*')
       .setThumbnail('https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/global/dota2_logo_symbol.png')
@@ -91,6 +92,9 @@ const dashboardCommand: Command = {
         iconURL: interaction.client.user?.displayAvatarURL() 
       })
       .setTimestamp();
+    
+    // Apply analytics theme color
+    applyTheme(embed, 'ANALYTICS');
 
     // ROW 1: Primary Actions (Account & Status)
     const row1 = new ActionRowBuilder<ButtonBuilder>().addComponents(
@@ -221,9 +225,9 @@ const dashboardCommand: Command = {
     // Language Selection
     if (buttonId === 'dashboard_language') {
       const languageEmbed = new EmbedBuilder()
-        .setColor('#00d9ff')
         .setTitle('🌍 ' + (i18nService.t(locale, 'language_title') || 'Selecionar Idioma'))
         .setDescription(i18nService.t(locale, 'language_description') || 'Escolha o idioma do bot para este servidor:');
+      applyTheme(languageEmbed, 'STRATEGY');
 
       const languageRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
         new ButtonBuilder()
@@ -278,10 +282,10 @@ const dashboardCommand: Command = {
     // Help
     if (buttonId === 'dashboard_help') {
       const helpEmbed = new EmbedBuilder()
-        .setColor('#1e88e5')
         .setTitle(i18nService.t(locale, 'embed_title'))
         .setDescription(i18nService.t(locale, 'embed_description'))
         .setFooter({ text: i18nService.t(locale, 'embed_footer') });
+      applyTheme(helpEmbed, 'TECHNICAL');
       
       await interaction.deferReply({ ephemeral: true });
       await dmOrEphemeral(interaction, { embeds: [helpEmbed] });
@@ -329,7 +333,6 @@ const dashboardCommand: Command = {
 
         // Create profile embed with translations
         const profileEmbed = new EmbedBuilder()
-          .setColor('#3498db')
           .setTitle(`${i18nService.t(locale, 'profile_title')} ${profile.name || username || 'Unknown Player'}`)
           .setDescription(`*${i18nService.t(locale, 'profile_title')}*`)
           .setThumbnail(profile.avatar || null)
@@ -367,6 +370,7 @@ const dashboardCommand: Command = {
           )
           .setFooter({ text: `Steam ID: ${steam32Id} • Data from OpenDota` })
           .setTimestamp();
+        applyTheme(profileEmbed, 'ANALYTICS');
 
         // Add top heroes if available
         if (profile.topHeroes && profile.topHeroes.length > 0) {
@@ -430,12 +434,11 @@ const dashboardCommand: Command = {
         const result = match.result === 'WIN' 
           ? `✅ ${i18nService.t(locale, 'match_victory')}` 
           : `❌ ${i18nService.t(locale, 'match_defeat')}`;
-        const color = match.result === 'WIN' ? '#2ecc71' : '#e74c3c';
+        const isVictory = match.result === 'WIN';
         const kda = ((match.kills + match.assists) / Math.max(match.deaths, 1)).toFixed(2);
         const duration = `${Math.floor(match.duration / 60)}:${String(match.duration % 60).padStart(2, '0')}`;
 
         const matchEmbed = new EmbedBuilder()
-          .setColor(color)
           .setTitle(`${result} - ${match.heroName}`)
           .setDescription(`*Last match performance • ${i18nService.t(locale, 'match_duration')}: ${duration}*`)
           .addFields(
@@ -448,6 +451,9 @@ const dashboardCommand: Command = {
           )
           .setFooter({ text: `Match ID: ${match.matchId} • Data from OpenDota` })
           .setTimestamp(match.playedAt);
+        
+        // Apply victory/defeat color theme
+        matchEmbed.setColor(isVictory ? '#2ecc71' : '#e74c3c');
 
         await dmOrEphemeral(interaction, { embeds: [matchEmbed] });
       } catch (error) {
@@ -496,11 +502,11 @@ const dashboardCommand: Command = {
 
         // Create match history embed
         const historyEmbed = new EmbedBuilder()
-          .setColor('#3498db')
           .setTitle('📜 Histórico de Partidas Recentes')
           .setDescription(`*Últimas ${matches.length} partidas analisadas*`)
           .setFooter({ text: 'Data from OpenDota' })
           .setTimestamp();
+        applyTheme(historyEmbed, 'ANALYTICS');
 
         // Add each match as a field
         matches.forEach((match: any, index: number) => {
@@ -572,7 +578,6 @@ const dashboardCommand: Command = {
 
         // Create progress embed
         const progressEmbed = new EmbedBuilder()
-          .setColor('#9b59b6')
           .setTitle('📈 Progress Tracker')
           .setDescription('*Performance analysis of your last 20 matches*')
           .addFields(
@@ -588,6 +593,7 @@ const dashboardCommand: Command = {
           )
           .setFooter({ text: 'Keep playing to track your evolution! • Data from OpenDota' })
           .setTimestamp();
+        applyTheme(progressEmbed, 'ANALYTICS');
 
         // Add recent trend (last 5 matches)
         const recentWins = matches.slice(0, 5).filter((m: any) => Boolean(m.won)).length;
@@ -651,11 +657,11 @@ const dashboardCommand: Command = {
 
         // Create leaderboard embed
         const leaderboardEmbed = new EmbedBuilder()
-          .setColor('#f39c12')
           .setTitle(`🏆 ${i18nService.t(locale, 'btn_leaderboard')}`)
           .setDescription('*Top 10 players ranked by win rate • Minimum 5 matches required*')
           .setFooter({ text: `Rankings for ${interaction.guild?.name || 'Server'}` })
           .setTimestamp();
+        applyTheme(leaderboardEmbed, 'LEADERBOARD');
 
         leaderboardResult.rows.forEach((player, index) => {
           const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
@@ -680,7 +686,6 @@ const dashboardCommand: Command = {
     // Balance
     if (buttonId === 'dashboard_balance') {
       const balanceEmbed = new EmbedBuilder()
-        .setColor('#16a085')
         .setTitle(`⚖️ ${i18nService.t(locale, 'btn_balance')}`)
         .setDescription(
           '**Balance teams based on MMR and move players to voice channels**\n\n' +
@@ -696,6 +701,7 @@ const dashboardCommand: Command = {
           '• MMR balance calculation'
         )
         .setFooter({ text: 'Bot needs Move Members permission' });
+      applyTheme(balanceEmbed, 'TEAM');
       
       await interaction.deferReply({ ephemeral: true });
       await dmOrEphemeral(interaction, { embeds: [balanceEmbed] });
@@ -746,11 +752,11 @@ const dashboardCommand: Command = {
 
         // Create meta embed
         const metaEmbed = new EmbedBuilder()
-          .setColor('#e74c3c')
           .setTitle(`🎯 ${i18nService.t(locale, 'btn_meta')}`)
           .setDescription('*Top 15 heroes ranked by win rate in professional matches*')
           .setFooter({ text: 'Data from OpenDota • Professional scene statistics' })
           .setTimestamp();
+        applyTheme(metaEmbed, 'STRATEGY');
 
         // Add top 15 heroes
         metaHeroes.slice(0, 15).forEach((hero: any, index: number) => {
@@ -861,7 +867,6 @@ const dashboardCommand: Command = {
 
         // Create AI Coach embed with translations
         const coachEmbed = new EmbedBuilder()
-          .setColor(lastMatch.result === 'WIN' ? '#4caf50' : '#f44336')
           .setTitle(`🤖 ${i18nService.t(locale, 'btn_ai_coach')} - ${lastMatch.heroName}`)
           .setDescription(aiAdvice)
           .setThumbnail(`https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/${lastMatch.heroName.toLowerCase().replace(/\s/g, '_')}.png`)
@@ -870,6 +875,9 @@ const dashboardCommand: Command = {
             iconURL: 'https://www.gstatic.com/lamda/images/gemini_sparkle_v002_d4735304ff6292a690345.svg'
           })
           .setTimestamp();
+        
+        // Apply victory/defeat color
+        coachEmbed.setColor(lastMatch.result === 'WIN' ? '#4caf50' : '#f44336');
 
         // Add match stats
         coachEmbed.addFields(
@@ -999,7 +1007,6 @@ const dashboardCommand: Command = {
         
         // Show confirmation with profile data (translated)
         const confirmEmbed = new EmbedBuilder()
-          .setColor('#2ecc71')
           .setTitle('✅ Steam Account Found!')
           .setDescription('Please confirm this is your account:')
           .addFields(
@@ -1010,6 +1017,7 @@ const dashboardCommand: Command = {
           )
           .setThumbnail(profile.avatar || null)
           .setFooter({ text: 'Click Confirm to link this account' });
+        applyTheme(confirmEmbed, 'ANALYTICS');
 
         const confirmRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
           new ButtonBuilder()
@@ -1045,7 +1053,6 @@ const dashboardCommand: Command = {
       try {
         // Create build embed (simplified generic build)
         const buildEmbed = new EmbedBuilder()
-          .setColor('#95a5a6')
           .setTitle(`🛠️ ${heroName}`)
           .setDescription('*Recommended item build • Adapt based on your game situation*')
           .addFields(
@@ -1077,6 +1084,7 @@ const dashboardCommand: Command = {
           )
           .setFooter({ text: 'Guide based on current meta - Always adapt to your game!' })
           .setTimestamp();
+        applyTheme(buildEmbed, 'STRATEGY');
 
         await dmOrEphemeral(interaction, { embeds: [buildEmbed] });
       } catch (error) {
