@@ -1,0 +1,414 @@
+🎮 APOLO DOTA 2 BOT - COMPLETE STRUCTURE TREE
+═══════════════════════════════════════════════════════════════════════
+
+APOLO COMMAND CENTER
+│
+├─ 📋 SLASH COMMANDS (Admin Only)
+│  │
+│  ├─ /dashboard
+│  │  └─ Opens interactive control panel (this is the main entry point)
+│  │
+│  ├─ /setup-apolo-structure
+│  │  └─ Creates all 8 specialized channels
+│  │
+│  ├─ /remove-apolo-structure
+│  │  └─ Removes all bot channels
+│  │
+│  └─ /xp-admin user amount reason
+│     └─ Grant XP to players (admin only)
+│
+└─ 🎮 DASHBOARD INTERFACE (Main Menu)
+   │
+   ├─ 🌐 AUTO-LANGUAGE DETECTION
+   │  └─ Detects from: Discord user's locale → Português/English/Español
+   │
+   ├─ ROW 1: ACCOUNT & STATUS (3 buttons)
+   │  │
+   │  ├─ 🔗 Conectar (Connect Steam)
+   │  │  └─ Modal: Steam ID/URL input → Verification → Confirmation
+   │  │
+   │  ├─ 👤 Perfil (View Profile)
+   │  │  └─ Shows: Avatar, MMR, Rank, Total matches, Win rate, Top heroes
+   │  │
+   │  └─ 📊 Partida (Match Analysis)
+   │     └─ Shows: Last match card with KDA, GPM, XPM, Duration, Grade
+   │
+   ├─ ROW 2: INTELLIGENCE & EVOLUTION (3 buttons)
+   │  │
+   │  ├─ 🤖 Coach IA (AI Coach)
+   │  │  ├─ 8 Analysis Tools via Modal:
+   │  │  │  ├─ 📊 Performance - Overall gameplay analysis
+   │  │  │  ├─ 📈 Trends - Identify patterns
+   │  │  │  ├─ ⚠️ Weaknesses - Areas to improve
+   │  │  │  ├─ ✅ Strengths - What you do well
+   │  │  │  ├─ 🦸 Heroes - Best/worst heroes
+   │  │  │  ├─ 📄 Full Report - Comprehensive analysis
+   │  │  │  ├─ ⚖️ Compare - vs bracket average
+   │  │  │  └─ 💡 Quick Tip - Actionable advice
+   │  │  └─ Powered by: Google Gemini AI
+   │  │
+   │  ├─ 📈 Progresso (Progress Tracker)
+   │  │  └─ Shows: Last 20 matches, Win rate, GPM/XPM averages, Trends
+   │  │
+   │  └─ 🏆 Ranking (Leaderboard)
+   │     └─ Shows: Top 10 by Win Rate, GPM, XPM, Win Streak
+   │
+   ├─ ROW 3: TACTICAL TOOLS (4 buttons)
+   │  │
+   │  ├─ ⚖️ Balanceador (Team Balance)
+   │  │  ├─ Snake draft algorithm
+   │  │  ├─ Moves players to voice channels
+   │  │  ├─ Shows team statistics
+   │  │  └─ Requirement: Be in voice channel
+   │  │
+   │  ├─ 🎯 Draft (Draft Simulator)
+   │  │  └─ Modal: Input enemy heroes → Get recommendations
+   │  │
+   │  ├─ 👥 Team (Team Analyzer)
+   │  │  └─ Modal: Input hero composition → Win probability analysis
+   │  │
+   │  └─ ⚔️ Meta (Meta Heroes)
+   │     └─ Shows: Carry, Mid, Offlane, Support meta by position
+   │
+   ├─ ROW 4: ADVANCED TOOLS (5 buttons)
+   │  │
+   │  ├─ 🗺️ Mapa (Ward Heatmap)
+   │  │  └─ Shows: Ward placements from last match
+   │  │
+   │  ├─ 🛠️ Builds (Hero Builds)
+   │  │  └─ Modal: Select hero → Item build + Skill progression
+   │  │
+   │  ├─ 🔍 Contadores (Counter Matrix)
+   │  │  └─ Modal: Input hero → Show counters, synergies, tips
+   │  │
+   │  ├─ 📡 Live Match (Live Match Tracker)
+   │  │  └─ Shows: Current match stats, heroes, items, team fight analysis
+   │  │
+   │  └─ 📊 Trends (Meta Trends)
+   │     └─ Shows: Current meta trends, hero win rates, pick rates
+   │
+   ├─ ROW 5: GAMIFICATION (2 buttons)
+   │  │
+   │  ├─ 🎯 Skill Build (Skill Build Optimizer)
+   │  │  └─ Modal: Hero + Role → Level-by-level ability progression
+   │  │
+   │  └─ 🏆 Rank Tracker (Rank Tracking)
+   │     └─ Shows: Current rank, MMR, win rate, streak, progression
+   │
+   └─ ROW 6: SYSTEM & CONFIG (2 buttons)
+      │
+      ├─ ❓ Ajuda (Help)
+      │  └─ Shows: Command help and usage instructions
+      │
+      └─ 🔄 Atualizar (Refresh)
+         ├─ Updates menu in real-time
+         ├─ Redetects language
+         ├─ Shows timestamp
+         └─ Rebuilds all buttons
+
+═══════════════════════════════════════════════════════════════════════
+
+🗂️ DISCORD CHANNELS CREATED (8 Specialized)
+═══════════════════════════════════════════════════════════════════════
+
+Category: 🎮 APOLO DOTA2
+│
+├─ 🔗・connect
+│  ├─ Purpose: Steam account connection
+│  ├─ Buttons:
+│  │  ├─ 🔗 Conectar Steam
+│  │  ├─ 🔓 Desconectar
+│  │  └─ ℹ️ Ajuda
+│  └─ Output: Connection confirmations, error messages
+│
+├─ 👤・profile
+│  ├─ Purpose: Player statistics & info
+│  ├─ Buttons:
+│  │  ├─ 👤 Perfil
+│  │  ├─ 📊 Histórico
+│  │  ├─ 🎮 Pool de Heróis
+│  │  ├─ 📈 Progresso
+│  │  └─ 🏆 Info de Rank
+│  └─ Output: Player stats, hero pool, progress charts
+│
+├─ 📊・reports
+│  ├─ Purpose: Match analysis & history
+│  ├─ Buttons:
+│  │  ├─ 📊 Última Partida
+│  │  ├─ 📅 Histórico
+│  │  ├─ 🔎 Buscar Partida
+│  │  ├─ 📈 Tendências
+│  │  └─ 🎯 Melhores Partidas
+│  └─ Output: Match cards, statistics, analysis
+│
+├─ 🤖・ai-analyst
+│  ├─ Purpose: AI-powered game analysis
+│  ├─ Tools (8 choices):
+│  │  ├─ 📊 Performance
+│  │  ├─ 📈 Trends
+│  │  ├─ ⚠️ Weaknesses
+│  │  ├─ ✅ Strengths
+│  │  ├─ 🦸 Heroes
+│  │  ├─ 📄 Full Report
+│  │  ├─ ⚖️ Compare
+│  │  └─ 💡 Quick Tip
+│  ├─ API: Google Gemini AI
+│  └─ Output: Personalized coaching advice in user's language
+│
+├─ 🎯・meta-builds
+│  ├─ Purpose: Meta heroes & item builds
+│  ├─ Buttons:
+│  │  ├─ 🛡️ Meta Carry
+│  │  ├─ ⚔️ Meta Mid
+│  │  ├─ 🏃 Meta Offlane
+│  │  ├─ 💊 Meta Support
+│  │  └─ 🔍 Hero Build
+│  ├─ Data Sources: OpenDota meta stats
+│  └─ Output: Hero rankings, builds, skill progression
+│
+├─ 📹・content-hub
+│  ├─ Purpose: Community content & announcements
+│  ├─ Buttons:
+│  │  ├─ 🎥 Anunciar Stream
+│  │  ├─ 📱 Links Sociais
+│  │  └─ 📹 Enviar Clip
+│  └─ Output: Stream announcements, social links, clips
+│
+├─ 🔎・find-team
+│  ├─ Purpose: LFG (Looking For Group) matchmaking
+│  ├─ Buttons:
+│  │  ├─ 🛡️ Core Player
+│  │  ├─ 💊 Support Player
+│  │  ├─ 👶 Beginner
+│  │  ├─ 🔥 Veteran
+│  │  └─ 🔎 Find Duo
+│  └─ Output: LFG listings, notifications
+│
+└─ 🏆・server-ranking
+   ├─ Purpose: Competitive leaderboards
+   ├─ Categories (4):
+   │  ├─ 🎯 Highest Win Rate
+   │  ├─ 💰 Highest GPM
+   │  ├─ 📈 Highest XPM
+   │  └─ 🔥 Longest Win Streak
+   ├─ Updates: Hourly auto-update
+   └─ Output: Top 10 players per category
+
+═══════════════════════════════════════════════════════════════════════
+
+📊 COMPLETE BUTTON COUNT
+═══════════════════════════════════════════════════════════════════════
+
+Dashboard Buttons:        19 buttons total
+├─ Row 1: 3 buttons (Connect, Profile, Match)
+├─ Row 2: 3 buttons (AI Coach, Progress, Leaderboard)
+├─ Row 3: 4 buttons (Balance, Draft, Team, Meta)
+├─ Row 4: 5 buttons (Heatmap, Builds, Counters, Live, Trends)
+├─ Row 5: 2 buttons (Skill Build, Rank Tracker)
+└─ Row 6: 2 buttons (Help, Refresh)
+
+Modal Options:            50+ total options
+├─ AI Coach:            8 analysis tools
+├─ Draft Simulator:     Multiple builds
+├─ Team Analyzer:       Composition analysis
+├─ Skill Builder:       Multiple heroes & roles
+├─ Counter Matrix:      Hero combinations
+└─ Meta Trends:         5+ categories
+
+═══════════════════════════════════════════════════════════════════════
+
+🔌 API INTEGRATIONS
+═══════════════════════════════════════════════════════════════════════
+
+Data Source              Purpose                    Cache TTL
+─────────────────────────────────────────────────────────────────
+Stratz GraphQL          Player profiles, matches   5 minutes
+OpenDota REST           Meta stats, builds         1 hour
+Steam Web API           Player avatars, profiles   24 hours
+Google Gemini AI        Coaching advice            None
+Discord.js v14          Button interactions        Real-time
+PostgreSQL              User data, guild settings  Persistent
+Redis                   API response caching       Variable
+
+═══════════════════════════════════════════════════════════════════════
+
+💾 DATABASE TABLES
+═══════════════════════════════════════════════════════════════════════
+
+Table Name              Purpose                    Key Fields
+─────────────────────────────────────────────────────────────────
+users                   Steam ↔ Discord linking    discord_id, steam_id
+guild_settings          Server preferences         guild_id, locale
+matches                 Match history cache        match_id, steam_id
+server_stats            Leaderboard data           guild_id, discord_id
+match_imp_scores        IMP score system           match_id, imp_score
+match_awards            Achievement tracking      award_type
+user_xp                 Leveling system            current_level, current_xp
+xp_events               XP activity log            event_type
+
+═══════════════════════════════════════════════════════════════════════
+
+🌍 SUPPORTED LANGUAGES (3 total)
+═══════════════════════════════════════════════════════════════════════
+
+Code  Language        Flag  Status      Detection Method
+─────────────────────────────────────────────────────────────────
+en    English         🇺🇸   ✅ Full     Discord user locale
+pt    Português       🇧🇷   ✅ Full     Discord user locale
+es    Español         🇪🇸   ✅ Full     Discord user locale
+
+═══════════════════════════════════════════════════════════════════════
+
+📱 FEATURES SUMMARY
+═══════════════════════════════════════════════════════════════════════
+
+Core Features (16 total)
+├─ Phase 1 (8):   Infrastructure, UI, Database, Tests
+├─ Phase 2 (2):   Draft Simulator, Team Analyzer
+├─ Phase 3 (4):   Counter Matrix, Live Match, Item Build, Meta Trends
+└─ Phase 4 (2):   Skill Build Optimizer, Rank Tracker
+
+Tier 1 Gamification (4 systems)
+├─ IMP Score:       -100 to +100 performance rating
+├─ Match Awards:    10 achievement types
+├─ XP & Leveling:   Dynamic progression system
+└─ Hero Benchmarks: OpenDota percentile rankings
+
+═══════════════════════════════════════════════════════════════════════
+
+🎨 UI THEMES BY FEATURE
+═══════════════════════════════════════════════════════════════════════
+
+Button Color    Meaning              Examples
+─────────────────────────────────────────────────────────────────
+🟢 Green        Entry Point          Connect Steam
+🔵 Blue         Main Feature          Profile, Match, AI Coach
+⚫ Gray          Analytics/Tools      Progress, Leaderboard, Balance
+🔴 Red          Refresh/Reset        Refresh button
+
+═══════════════════════════════════════════════════════════════════════
+
+⚙️ RESPONSIVE BEHAVIOR
+═══════════════════════════════════════════════════════════════════════
+
+User Action                Response                   Time
+─────────────────────────────────────────────────────────────────
+Click Button               Button defers, shows modal  <200ms
+Submit Modal               API call, response         <2.5s
+Click Refresh              In-place menu update       <500ms
+Language Change (Discord)  Auto-detected on refresh   Instant
+DB Update                  Persisted automatically    <1s
+
+═══════════════════════════════════════════════════════════════════════
+
+📋 EXAMPLE FLOW: Portuguese User
+═══════════════════════════════════════════════════════════════════════
+
+1. User has Discord set to Português (Brasil)
+2. User types /dashboard
+3. Bot detects pt-BR from interaction.locale
+4. Menu appears in Portuguese:
+   ├─ Buttons: Conectar, Perfil, Partida, Coach IA, etc.
+   ├─ Descriptions: All Portuguese
+   └─ Error messages: Portuguese
+5. User clicks any button
+6. All responses in Portuguese automatically
+7. User clicks 🔄 Refresh
+8. Menu confirms: "Idioma: PT (Auto-detectado do Discord)"
+
+═══════════════════════════════════════════════════════════════════════
+
+✨ COMPLETE FEATURE TREE
+═══════════════════════════════════════════════════════════════════════
+
+🎮 APOLO DOTA 2 BOT
+│
+├─ 🔑 ACCESS CONTROL
+│  ├─ Slash commands: Admin only
+│  ├─ Dashboard: All users
+│  ├─ Buttons: User-aware DM/ephemeral
+│  └─ Data: Per-user access control
+│
+├─ 🎨 USER INTERFACE
+│  ├─ 6 button rows (19 total buttons)
+│  ├─ Rich embeds with themes
+│  ├─ Modal interactions
+│  └─ Real-time updates
+│
+├─ 🗣️ INTERNATIONALIZATION
+│  ├─ 3 languages (EN, PT, ES)
+│  ├─ Auto-detection from Discord
+│  ├─ Per-user locale awareness
+│  └─ 400+ translation keys
+│
+├─ 🎮 GAME FEATURES
+│  ├─ Match analysis (16 metrics)
+│  ├─ Player profiles (20+ stats)
+│  ├─ Leaderboards (4 categories)
+│  ├─ Team balancing (snake draft)
+│  ├─ AI coaching (8 tools)
+│  ├─ Meta analysis (by position)
+│  ├─ Build guides (multiple heroes)
+│  ├─ Counter matrix (hero matchups)
+│  ├─ Skill progression (level-by-level)
+│  └─ Rank tracking (progression charts)
+│
+├─ 🎯 GAMIFICATION
+│  ├─ IMP Score system (-100 to +100)
+│  ├─ Match awards (10 types)
+│  ├─ XP & leveling (dynamic curve)
+│  ├─ Hero benchmarks (percentiles)
+│  └─ Unlock achievements
+│
+├─ 💾 DATA PERSISTENCE
+│  ├─ PostgreSQL database
+│  ├─ Redis caching layer
+│  ├─ Connection pooling
+│  ├─ Automatic backups
+│  └─ Transaction support
+│
+├─ 🔄 REAL-TIME UPDATES
+│  ├─ Instant menu refresh
+│  ├─ Live match tracking
+│  ├─ Hourly leaderboard updates
+│  └─ Push notifications (future)
+│
+├─ 🤖 AI INTEGRATION
+│  ├─ Google Gemini API
+│  ├─ 8 analysis tools
+│  ├─ Context-aware responses
+│  ├─ Multi-language coaching
+│  └─ Personalized insights
+│
+└─ 📊 MONITORING & LOGGING
+   ├─ Prometheus metrics
+   ├─ Grafana dashboards
+   ├─ Error tracking
+   ├─ Performance monitoring
+   └─ User activity logs
+
+═══════════════════════════════════════════════════════════════════════
+
+🚀 DEPLOYMENT STATUS
+═══════════════════════════════════════════════════════════════════════
+
+Component              Status          Version
+─────────────────────────────────────────────────────────────────
+Bot Core               ✅ Production   v2.2.0
+Discord.js            ✅ v14.14.1
+TypeScript             ✅ 5.9.3
+PostgreSQL             ✅ 14+
+Redis                  ✅ 7+
+Docker                 ✅ Multi-stage
+Tests                  ✅ 502 passing
+Documentation          ✅ Complete
+GitHub                 ✅ Pushed
+
+═══════════════════════════════════════════════════════════════════════
+
+Version: v2.2.0
+Updated: December 5, 2025
+Status: ✅ Production Ready
+Language: Auto-Detect (EN/PT/ES)
+
+═══════════════════════════════════════════════════════════════════════
