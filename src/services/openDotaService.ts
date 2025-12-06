@@ -317,11 +317,4 @@ export async function getMatchVision(matchId: number): Promise<MatchVision> {
   return { matchId, duration, observers, sentries };
 }
 
-export default {
-  getLastMatch,
-  getPlayerProfile,
-  getMatchHistory,
-  getMetaHeroes,
-  getHeroBuild,
-  getMatchVision,
-};
+

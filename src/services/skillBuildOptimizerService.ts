@@ -235,10 +235,4 @@ export function compareBuilds(
   };
 }
 
-export default {
-  getSkillBuild,
-  getAvailableBuilds,
-  getHeroesWithSkillBuilds,
-  getSkillProgression,
-  compareBuilds,
-};
+

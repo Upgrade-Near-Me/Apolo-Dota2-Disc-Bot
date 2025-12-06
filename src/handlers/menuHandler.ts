@@ -23,6 +23,8 @@ import {
   buildMetaEmbedSubmenu,
   buildTeamEmbedSubmenu,
   buildSettingsEmbedSubmenu,
+  buildEditSubmenu,
+  buildEditEmbedSubmenu,
 } from '../utils/menuBuilder.js';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -105,6 +107,13 @@ export async function handleMenuButton(interaction: ButtonInteraction): Promise<
         components: buttons,
       });
     }
+      // ====================== EDIT CATEGORY ======================
+      else if (customId === 'submenu_settings_edit') {
+        const embed = buildEditEmbedSubmenu(locale, interaction.client);
+        const buttons = buildEditSubmenu(locale);
+        await interaction.editReply({ embeds: [embed], components: buttons });
+        return;
+      }
     // If none of the above, do nothing (will be handled by other handlers)
   } catch (error) {
     console.error('Error in menu handler:', error);

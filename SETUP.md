@@ -210,17 +210,18 @@ DISCORD_GUILD_ID=9876543210987654321
 DATABASE_URL=postgresql://postgres:your_password@localhost:5432/apolo_dota2
 
 # ==========================================
-# API KEYS
+# API KEYS (supporta até 10 chaves por serviço)
 # ==========================================
-
-# Stratz API token from https://stratz.com/api
-STRATZ_API_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+# Stratz API tokens from https://stratz.com/api (pool). Defina STRATZ_API_TOKEN_1, STRATZ_API_TOKEN_2, ... STRATZ_API_TOKEN_10.
+# O bot rotaciona chaves ao receber 429/403 antes de cair no fallback OpenDota.
+STRATZ_API_TOKEN_1=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 # (Optional) Steam Web API key from https://steamcommunity.com/dev/apikey
 STEAM_API_KEY=ABCDEF1234567890ABCDEF1234567890
 
-# Google Gemini API key from https://aistudio.google.com/app/apikey
-GEMINI_API_KEY=AIzaSyABCDEF1234567890abcdefGHIJKLMNOPQR
+# Google Gemini API keys from https://aistudio.google.com/app/apikey (pool). Defina GEMINI_API_KEY_1 ... GEMINI_API_KEY_10.
+# O bot rotaciona e aplica cooldown automático na chave em erros 429/403.
+GEMINI_API_KEY_1=AIzaSyABCDEF1234567890abcdefGHIJKLMNOPQR
 ```
 
 ### Configuration Tips

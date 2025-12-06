@@ -231,5 +231,20 @@
   "menu_settings_about": "Acerca de",
   "menu_settings_about_desc": "Información del bot",
   "menu_settings_help": "Ayuda",
-  "menu_settings_help_desc": "Cómo usar"
+  "menu_settings_help_desc": "Cómo usar",
+  "menu_settings_edit": "Editar",
+  "menu_settings_edit_desc": "Ajustes rápidos sin escribir",
+
+  "menu_edit_title": "✏️ Centro de Edición",
+  "menu_edit_description": "Actualiza preferencias sin escribir comandos",
+  "menu_edit_profile": "Perfil",
+  "menu_edit_profile_desc": "Editar nombre/avatar/enlace Steam",
+  "menu_edit_language": "Idioma",
+  "menu_edit_language_desc": "Cambiar tu idioma",
+  "menu_edit_notifications": "Notificaciones",
+  "menu_edit_notifications_desc": "Ajustar alertas y DMs",
+  "menu_edit_privacy": "Privacidad",
+  "menu_edit_privacy_desc": "Visibilidad y privacidad de DM",
+  "menu_edit_builds": "Builds",
+  "menu_edit_builds_desc": "Guardar/actualizar/eliminar builds"
 }

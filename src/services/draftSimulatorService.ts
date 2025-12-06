@@ -483,14 +483,4 @@ export function getDraftRecommendations(enemyHeroes: string[], yourRole: string)
   };
 }
 
-export default {
-  calculateMatchupScore,
-  analyzeTeamSynergy,
-  recommendHeroesForRole,
-  findCounterPicks,
-  analyzeDraft,
-  calculateTeamPowerLevel,
-  getAvailableHeroes,
-  getHeroInfo,
-  getDraftRecommendations,
-};
+

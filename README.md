@@ -107,9 +107,10 @@
    REDIS_PORT=6379
 
    # API Keys (Optional but recommended)
-   STRATZ_API_TOKEN=your_stratz_token
+   # Supports pools up to 10 keys. The bot rotates on 429/403.
+   STRATZ_API_TOKEN_1=your_stratz_token           # add STRATZ_API_TOKEN_2..10 as needed
    STEAM_API_KEY=your_steam_key
-   GEMINI_API_KEY=your_gemini_api_key
+   GEMINI_API_KEY_1=your_gemini_api_key           # add GEMINI_API_KEY_2..10 as needed
    ```
 
 3. **Start with Docker**
@@ -694,9 +695,9 @@ DISCORD_CLIENT_ID=<client_id>
 DATABASE_URL=<provided_by_railway>
 REDIS_HOST=<redis_host>
 REDIS_PORT=6379
-STRATZ_API_TOKEN=<your_token>
+STRATZ_API_TOKEN_1=<your_token>    # add STRATZ_API_TOKEN_2..10 as needed
 STEAM_API_KEY=<your_key>
-GEMINI_API_KEY=<your_key>
+GEMINI_API_KEY_1=<your_key>        # add GEMINI_API_KEY_2..10 as needed
 ```
 
 ## 📊 Monitoring

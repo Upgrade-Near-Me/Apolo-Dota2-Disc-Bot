@@ -338,7 +338,7 @@ export function buildTeamSubmenu(locale: Locale): ActionRowBuilder<ButtonBuilder
   return rows;
 }
 
-// SETTINGS SUBMENU (Preferences & Help) - 5 options
+// SETTINGS SUBMENU (Preferences & Help) - includes Edit hub
 export function buildSettingsSubmenu(locale: Locale): ActionRowBuilder<ButtonBuilder>[] {
   const rows: ActionRowBuilder<ButtonBuilder>[] = [];
 
@@ -370,11 +370,20 @@ export function buildSettingsSubmenu(locale: Locale): ActionRowBuilder<ButtonBui
         .setLabel(i18nService.t(locale, 'menu_settings_help'))
         .setStyle(ButtonStyle.Success),
       new ButtonBuilder()
+        .setCustomId('submenu_settings_edit')
+        .setLabel(i18nService.t(locale, 'menu_settings_edit'))
+        .setStyle(ButtonStyle.Primary),
+    );
+  rows.push(row2);
+
+  const row3 = new ActionRowBuilder<ButtonBuilder>()
+    .addComponents(
+      new ButtonBuilder()
         .setCustomId('menu_back')
         .setLabel(i18nService.t(locale, 'btn_back'))
         .setStyle(ButtonStyle.Secondary),
     );
-  rows.push(row2);
+  rows.push(row3);
 
   return rows;
 }
@@ -690,6 +699,91 @@ export function buildSettingsEmbedSubmenu(locale: Locale, client: any): EmbedBui
       {
         name: i18nService.t(locale, 'menu_settings_help'),
         value: i18nService.t(locale, 'menu_settings_help_desc'),
+        inline: true,
+      },
+      {
+        name: i18nService.t(locale, 'menu_settings_edit'),
+        value: i18nService.t(locale, 'menu_settings_edit_desc'),
+        inline: true,
+      },
+    )
+    .setThumbnail(client.user?.displayAvatarURL() || '')
+    .setFooter({
+      text: i18nService.t(locale, 'menu_footer'),
+      iconURL: client.user?.displayAvatarURL() || '',
+    });
+}
+
+// EDIT SUBMENU (all editable preferences without typing)
+export function buildEditSubmenu(locale: Locale): ActionRowBuilder<ButtonBuilder>[] {
+  const rows: ActionRowBuilder<ButtonBuilder>[] = [];
+
+  const row1 = new ActionRowBuilder<ButtonBuilder>()
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId('submenu_edit_profile')
+        .setLabel(i18nService.t(locale, 'menu_edit_profile'))
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
+        .setCustomId('submenu_edit_language')
+        .setLabel(i18nService.t(locale, 'menu_edit_language'))
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
+        .setCustomId('submenu_edit_notifications')
+        .setLabel(i18nService.t(locale, 'menu_edit_notifications'))
+        .setStyle(ButtonStyle.Primary),
+    );
+  rows.push(row1);
+
+  const row2 = new ActionRowBuilder<ButtonBuilder>()
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId('submenu_edit_privacy')
+        .setLabel(i18nService.t(locale, 'menu_edit_privacy'))
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
+        .setCustomId('submenu_edit_builds')
+        .setLabel(i18nService.t(locale, 'menu_edit_builds'))
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
+        .setCustomId('menu_back')
+        .setLabel(i18nService.t(locale, 'btn_back'))
+        .setStyle(ButtonStyle.Secondary),
+    );
+  rows.push(row2);
+
+  return rows;
+}
+
+export function buildEditEmbedSubmenu(locale: Locale, client: any): EmbedBuilder {
+  return new EmbedBuilder()
+    .setTitle(i18nService.t(locale, 'menu_edit_title'))
+    .setDescription(i18nService.t(locale, 'menu_edit_description'))
+    .setColor(CATEGORY_COLORS.SETTINGS)
+    .addFields(
+      {
+        name: i18nService.t(locale, 'menu_edit_profile'),
+        value: i18nService.t(locale, 'menu_edit_profile_desc'),
+        inline: true,
+      },
+      {
+        name: i18nService.t(locale, 'menu_edit_language'),
+        value: i18nService.t(locale, 'menu_edit_language_desc'),
+        inline: true,
+      },
+      {
+        name: i18nService.t(locale, 'menu_edit_notifications'),
+        value: i18nService.t(locale, 'menu_edit_notifications_desc'),
+        inline: true,
+      },
+      {
+        name: i18nService.t(locale, 'menu_edit_privacy'),
+        value: i18nService.t(locale, 'menu_edit_privacy_desc'),
+        inline: true,
+      },
+      {
+        name: i18nService.t(locale, 'menu_edit_builds'),
+        value: i18nService.t(locale, 'menu_edit_builds_desc'),
         inline: true,
       },
     )

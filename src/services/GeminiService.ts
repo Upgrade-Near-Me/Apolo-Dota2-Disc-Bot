@@ -16,28 +16,35 @@ import type { ParsedStratzMatch } from '../types/dota.js';
 import type { Locale } from '../types/dota.js';
 import { checkRateLimit } from '../utils/rateLimiter.js';
 import logger from '../utils/logger.js';
+import { getApiKey, isServiceEnabled, markKeyAsCooldown } from '../utils/apiKeyPool.js';
 
 // Check if API key is configured
+const legacyGeminiKey = config.api.gemini.apiKey && config.api.gemini.apiKey !== 'your_gemini_api_key_here'
+  ? config.api.gemini.apiKey
+  : null;
 const GEMINI_ENABLED = Boolean(
-  config.api.gemini.apiKey && 
-  config.api.gemini.apiKey !== 'your_gemini_api_key_here' &&
-  config.api.gemini.apiKey.startsWith('AIza') // Valid Google API key format
+  isServiceEnabled('gemini') || (legacyGeminiKey && legacyGeminiKey.startsWith('AIza'))
 );
 
-if (!GEMINI_ENABLED) {
-  logger.warn('⚠️ WARNING: GEMINI_API_KEY not configured! AI Coach will not work.');
-  logger.warn('👉 Get your free key at: https://aistudio.google.com/app/apikey');
-  logger.warn(`🔑 Current key: ${config.api.gemini.apiKey ? '***' + config.api.gemini.apiKey.slice(-8) : 'MISSING'}`);
-} else {
-  logger.info({ model: config.api.gemini.model }, 'Gemini AI Coach enabled');
-  logger.info('📊 Free tier limits: 15 req/min, 1500 req/day, 1M tokens/month');
-  logger.info('🔗 Monitor usage: https://ai.dev/usage?tab=rate-limit');
+const geminiClients = new Map<string, GoogleGenerativeAI>();
+
+function getGeminiClient(): { client: GoogleGenerativeAI | null; key: string | null } {
+  const key = getApiKey('gemini') ?? legacyGeminiKey;
+  if (!key || !key.startsWith('AIza')) return { client: null, key: null };
+  const existing = geminiClients.get(key);
+  if (existing) return { client: existing, key };
+  const client = new GoogleGenerativeAI(key);
+  geminiClients.set(key, client);
+  return { client, key };
 }
 
-// Initialize Gemini AI
-const genAI = GEMINI_ENABLED 
-  ? new GoogleGenerativeAI(config.api.gemini.apiKey)
-  : null;
+function isQuotaError(error: unknown): boolean {
+  const anyErr = error as any;
+  const status = anyErr?.response?.status || anyErr?.response?.statusCode;
+  if (status === 429 || status === 403) return true;
+  const message = (anyErr?.message || '').toString().toLowerCase();
+  return message.includes('429') || message.includes('rate limit') || message.includes('quota') || message.includes('too many');
+}
 
 const GEMINI_RATE_LIMITS = {
   perMatch: { prefix: 'rl:gemini:match', limit: 1, windowSeconds: 30 },
@@ -398,7 +405,7 @@ export async function generateCoachingAdvice(
   locale: Locale
 ): Promise<string> {
   // Validate Gemini is enabled
-  if (!GEMINI_ENABLED || !genAI) {
+  if (!GEMINI_ENABLED) {
     return locale === 'pt' 
       ? '⚠️ O AI Coach não está configurado. Configure GEMINI_API_KEY no arquivo .env.'
       : locale === 'es'
@@ -440,7 +447,17 @@ export async function generateCoachingAdvice(
 
   // Generate new coaching advice
   logger.info({ matchId: matchData.matchId, locale }, 'Generating coaching advice');
-  
+
+  const { client: genAI, key } = getGeminiClient();
+  if (!genAI) {
+    const msg = locale === 'pt'
+      ? '❌ Chave Gemini ausente. Configure GEMINI_API_KEY_1 (ou até _10) e reinicie o bot.'
+      : locale === 'es'
+      ? '❌ Falta la clave Gemini. Configure GEMINI_API_KEY_1 (o hasta _10) y reinicie el bot.'
+      : '❌ Missing Gemini API key. Set GEMINI_API_KEY_1 (up to _10) and restart the bot.';
+    return msg;
+  }
+
   try {
     // Build the prompt
     const systemPrompt = buildSystemPrompt(matchData, locale);
@@ -477,7 +494,8 @@ export async function generateCoachingAdvice(
     const errorMessage = (error as Error).message || String(error);
     
     // Check for quota exceeded - use fallback tips
-    if (errorMessage.includes('429') || errorMessage.includes('quota') || errorMessage.includes('Too Many Requests')) {
+    if (isQuotaError(error)) {
+      markKeyAsCooldown('gemini', key);
       console.log('⚠️ Quota exceeded, using fallback coaching tips');
       
       // Calculate KDA and performance level
@@ -534,8 +552,4 @@ export async function invalidateCoachingCache(matchId: string): Promise<void> {
   console.log(`🗑️ Coaching cache invalidated for match ${matchId}`);
 }
 
-// Default export
-export default {
-  generateCoachingAdvice,
-  invalidateCoachingCache,
-};
+

@@ -245,12 +245,4 @@ export function estimateRankProgress(
   };
 }
 
-export default {
-  getRankFromMMR,
-  getRankColorFromMMR,
-  calculateRankProgress,
-  generateRankChart,
-  getRankInsights,
-  getNextRankRequirement,
-  estimateRankProgress,
-};
+

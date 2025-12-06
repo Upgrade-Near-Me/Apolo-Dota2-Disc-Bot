@@ -537,14 +537,4 @@ function inferRoleFromHero(hero: string): string {
   return 'offlane'; // Default
 }
 
-export default {
-  analyzeTeamComposition,
-  calculateTeamSynergy,
-  identifyTeamStrengths,
-  identifyTeamWeaknesses,
-  generateTeamRecommendations,
-  analyzeTeamSkillLevel,
-  analyzeCompleteTeam,
-  compareTeams,
-  analyzeTeamCompositionSimple,
-};
+

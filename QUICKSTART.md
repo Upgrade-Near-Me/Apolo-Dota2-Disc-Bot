@@ -69,8 +69,8 @@ Fill in `.env`:
 DISCORD_TOKEN=your_bot_token_here
 DISCORD_CLIENT_ID=your_application_id_here
 DATABASE_URL=postgresql://postgres:password@localhost:5432/apolo_dota2
-STRATZ_API_TOKEN=your_stratz_token_here
-GEMINI_API_KEY=your_gemini_key_here
+STRATZ_API_TOKEN_1=your_stratz_token_here            # suporte a até 10 chaves: STRATZ_API_TOKEN_1..10
+GEMINI_API_KEY_1=your_gemini_key_here                # suporte a até 10 chaves: GEMINI_API_KEY_1..10
 STEAM_API_KEY=your_steam_key_optional
 ```
 

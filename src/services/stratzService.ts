@@ -11,10 +11,11 @@
 
 import { GraphQLClient } from 'graphql-request';
 import config from '../config/index.js';
-import openDota from './openDotaService.js';
+import * as openDota from './openDotaService.js';
 import { redisService, CacheTTL } from './RedisService.js';
 import logger from '../utils/logger.js';
 import { checkRateLimit } from '../utils/rateLimiter.js';
+import { getApiKey, isServiceEnabled, markKeyAsCooldown } from '../utils/apiKeyPool.js';
 import type { 
   StratzPlayerResponse, 
   StratzMatchHistoryResponse,
@@ -24,21 +25,29 @@ import type {
 } from '../types/dota.js';
 
 // Check if API token is configured
-const STRATZ_ENABLED = Boolean(
-  config.api.stratz.token && 
-  config.api.stratz.token !== 'your_stratz_api_token_here'
-);
+const legacyStratzToken = config.api.stratz.token && config.api.stratz.token !== 'your_stratz_api_token_here'
+  ? config.api.stratz.token
+  : null;
+const STRATZ_ENABLED = Boolean(isServiceEnabled('stratz') || legacyStratzToken);
 
-if (!STRATZ_ENABLED) {
-  logger.warn('⚠️ WARNING: STRATZ_API_TOKEN not configured! Will use OpenDota fallback.');
-  logger.warn('👉 Get your token at: https://stratz.com/api');
+function getStratzClient(): { client: GraphQLClient | null; key: string | null } {
+  const key = getApiKey('stratz') ?? legacyStratzToken;
+  if (!key) return { client: null, key: null };
+  const client = new GraphQLClient(config.api.stratz.endpoint, {
+    headers: {
+      Authorization: `Bearer ${key}`,
+    },
+  });
+  return { client, key };
 }
 
-const client = new GraphQLClient(config.api.stratz.endpoint, {
-  headers: {
-    Authorization: `Bearer ${config.api.stratz.token}`,
-  },
-});
+function isQuotaError(error: unknown): boolean {
+  const anyErr = error as any;
+  const status = anyErr?.response?.status || anyErr?.response?.statusCode;
+  if (status === 429 || status === 403) return true;
+  const message = (anyErr?.message || '').toString().toLowerCase();
+  return message.includes('rate limit') || message.includes('429') || message.includes('quota') || message.includes('too many');
+}
 
 const RateLimits = {
   stratz: { key: 'rl:stratz:global', limit: 90, windowSeconds: 60 },
@@ -83,6 +92,13 @@ export async function getLastMatch(steamId: string): Promise<ParsedStratzMatch |
 
   // If Stratz disabled, use OpenDota
   if (!STRATZ_ENABLED) {
+    await checkRateLimit({ ...RateLimits.opendota, context: 'stratzService.opendotaFallback' });
+    return fetchFromOpenDotaWithCache(cacheKey, () => openDota.getLastMatch(steamId), CacheTTL.MATCH_DATA) as any;
+  }
+
+  const { client, key } = getStratzClient();
+  if (!client) {
+    logger.warn({ steamId }, 'Stratz client unavailable, using OpenDota fallback');
     await checkRateLimit({ ...RateLimits.opendota, context: 'stratzService.opendotaFallback' });
     return fetchFromOpenDotaWithCache(cacheKey, () => openDota.getLastMatch(steamId), CacheTTL.MATCH_DATA) as any;
   }
@@ -142,6 +158,9 @@ export async function getLastMatch(steamId: string): Promise<ParsedStratzMatch |
     return parsed;
   } catch (error) {
     logger.error({ error, steamId }, 'Stratz API error: last match');
+    if (isQuotaError(error)) {
+      markKeyAsCooldown('stratz', key);
+    }
     // Fallback to OpenDota
     await checkRateLimit({ ...RateLimits.opendota, context: 'stratzService.opendotaFallback' });
     return fetchFromOpenDotaWithCache(cacheKey, () => openDota.getLastMatch(steamId), CacheTTL.MATCH_DATA) as any;
@@ -171,9 +190,17 @@ export async function getPlayerProfile(steamId: string): Promise<ParsedStratzPla
     return fetchFromOpenDotaWithCache(cacheKey, () => openDota.getPlayerProfile(steamId), CacheTTL.PLAYER_PROFILE) as any;
   }
 
+  const { client, key } = getStratzClient();
+
   const rate = await checkRateLimit({ ...RateLimits.stratz, context: 'stratzService.getPlayerProfile' });
   if (!rate.allowed) {
     logger.warn({ steamId, retryAfter: rate.retryAfter }, 'Stratz rate limited, using OpenDota profile fallback');
+    await checkRateLimit({ ...RateLimits.opendota, context: 'stratzService.opendotaFallback' });
+    return fetchFromOpenDotaWithCache(cacheKey, () => openDota.getPlayerProfile(steamId), CacheTTL.PLAYER_PROFILE) as any;
+  }
+
+  if (!client) {
+    logger.warn({ steamId }, 'Stratz client unavailable, using OpenDota profile fallback');
     await checkRateLimit({ ...RateLimits.opendota, context: 'stratzService.opendotaFallback' });
     return fetchFromOpenDotaWithCache(cacheKey, () => openDota.getPlayerProfile(steamId), CacheTTL.PLAYER_PROFILE) as any;
   }
@@ -219,6 +246,9 @@ export async function getPlayerProfile(steamId: string): Promise<ParsedStratzPla
     return parsed;
   } catch (error) {
     logger.error({ error, steamId }, 'Stratz API error: player profile');
+    if (isQuotaError(error)) {
+      markKeyAsCooldown('stratz', key);
+    }
     // Fallback to OpenDota
     await checkRateLimit({ ...RateLimits.opendota, context: 'stratzService.opendotaFallback' });
     return fetchFromOpenDotaWithCache(cacheKey, () => openDota.getPlayerProfile(steamId), CacheTTL.PLAYER_PROFILE) as any;
@@ -249,9 +279,17 @@ export async function getMatchHistory(steamId: string, limit = 20): Promise<Pars
     return fetchFromOpenDotaWithCache(cacheKey, () => openDota.getMatchHistory(steamId, limit), CacheTTL.MATCH_HISTORY) as any;
   }
 
+  const { client, key } = getStratzClient();
+
   const rate = await checkRateLimit({ ...RateLimits.stratz, context: 'stratzService.getMatchHistory' });
   if (!rate.allowed) {
     logger.warn({ steamId, limit, retryAfter: rate.retryAfter }, 'Stratz rate limited, using OpenDota history fallback');
+    await checkRateLimit({ ...RateLimits.opendota, context: 'stratzService.opendotaFallback' });
+    return fetchFromOpenDotaWithCache(cacheKey, () => openDota.getMatchHistory(steamId, limit), CacheTTL.MATCH_HISTORY) as any;
+  }
+
+  if (!client) {
+    logger.warn({ steamId, limit }, 'Stratz client unavailable, using OpenDota history fallback');
     await checkRateLimit({ ...RateLimits.opendota, context: 'stratzService.opendotaFallback' });
     return fetchFromOpenDotaWithCache(cacheKey, () => openDota.getMatchHistory(steamId, limit), CacheTTL.MATCH_HISTORY) as any;
   }
@@ -288,6 +326,9 @@ export async function getMatchHistory(steamId: string, limit = 20): Promise<Pars
     return parsed;
   } catch (error) {
     logger.error({ error, steamId, limit }, 'Stratz API error: match history');
+    if (isQuotaError(error)) {
+      markKeyAsCooldown('stratz', key);
+    }
     // Fallback to OpenDota
     await checkRateLimit({ ...RateLimits.opendota, context: 'stratzService.opendotaFallback' });
     return fetchFromOpenDotaWithCache(cacheKey, () => openDota.getMatchHistory(steamId, limit), CacheTTL.MATCH_HISTORY) as any;
@@ -412,9 +453,4 @@ function parseHistoryData(data: StratzMatchHistoryResponse): ParsedStratzHistory
 }
 
 // Default export for compatibility
-export default {
-  getLastMatch,
-  getPlayerProfile,
-  getMatchHistory,
-  invalidatePlayerCache,
-};
+
