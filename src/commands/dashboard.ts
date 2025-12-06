@@ -209,13 +209,8 @@ const dashboardCommand: Command = {
         .setEmoji('🏆')
     );
 
-    // ROW 6: System & Configuration
+    // ROW 6: System & Configuration (Language auto-detected from Discord user locale)
     const row6 = new ActionRowBuilder<ButtonBuilder>().addComponents(
-      new ButtonBuilder()
-        .setCustomId('dashboard_language')
-        .setLabel(i18nService.t(locale, 'btn_language') || 'Idioma')
-        .setStyle(ButtonStyle.Secondary)
-        .setEmoji('🌍'),
       new ButtonBuilder()
         .setCustomId('dashboard_help')
         .setLabel(i18nService.t(locale, 'btn_help'))
@@ -244,10 +239,148 @@ const dashboardCommand: Command = {
     // Get user's locale for all responses
     const locale = await resolveLocale(interaction);
 
-    // Refresh dashboard
+    // Refresh dashboard - Update menu completely with fresh data and auto-detected language
     if (buttonId === 'dashboard_refresh') {
-      // @ts-expect-error - Casting to ChatInputCommandInteraction for execute
-      await this.execute(interaction as ChatInputCommandInteraction);
+      await interaction.deferUpdate();
+      
+      // Rebuild entire dashboard with current locale (auto-detects Discord user locale)
+      const refreshEmbed = new EmbedBuilder()
+        .setTitle('🎮 APOLO COMMAND CENTER')
+        .setDescription(`**Painel de Controle Tático • Selecione um módulo abaixo**\n\n*Sistema de análise avançada com IA Gemini integrada*\n\n🌐 **Idioma:** ${locale.toUpperCase()} (Auto-detectado do Discord)`)
+        .setThumbnail('https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/global/dota2_logo_symbol.png')
+        .addFields(
+          { name: '👤 Player Stats', value: 'Perfil, Partidas e Histórico', inline: true },
+          { name: '🤖 AI Intelligence', value: 'Coach Gemini & Análise', inline: true },
+          { name: '⚙️ Server Tools', value: 'Configurações e Utilitários', inline: true },
+          { name: '\u200b', value: '⏰ Menu atualizado em: ' + new Date().toLocaleTimeString('pt-BR'), inline: false }
+        )
+        .setImage('https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/blog/733_update_main.jpg')
+        .setFooter({ 
+          text: 'APOLO Dota 2 • v2.2 Enterprise Edition | Language: ' + locale.toUpperCase(), 
+          iconURL: interaction.client.user?.displayAvatarURL() 
+        })
+        .setTimestamp();
+      
+      applyTheme(refreshEmbed, 'ANALYTICS');
+
+      // Rebuild all button rows with fresh locale strings
+      const refreshRow1 = new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder()
+          .setCustomId('dashboard_connect')
+          .setLabel(i18nService.t(locale, 'btn_connect'))
+          .setStyle(ButtonStyle.Success)
+          .setEmoji('🔗'),
+        new ButtonBuilder()
+          .setCustomId('dashboard_profile')
+          .setLabel(i18nService.t(locale, 'btn_profile'))
+          .setStyle(ButtonStyle.Primary)
+          .setEmoji('👤'),
+        new ButtonBuilder()
+          .setCustomId('dashboard_match')
+          .setLabel(i18nService.t(locale, 'btn_match'))
+          .setStyle(ButtonStyle.Primary)
+          .setEmoji('📊')
+      );
+
+      const refreshRow2 = new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder()
+          .setCustomId('dashboard_ai')
+          .setLabel(i18nService.t(locale, 'btn_ai_coach'))
+          .setStyle(ButtonStyle.Primary)
+          .setEmoji('🤖'),
+        new ButtonBuilder()
+          .setCustomId('dashboard_progress')
+          .setLabel(i18nService.t(locale, 'btn_progress'))
+          .setStyle(ButtonStyle.Secondary)
+          .setEmoji('📈'),
+        new ButtonBuilder()
+          .setCustomId('dashboard_leaderboard')
+          .setLabel(i18nService.t(locale, 'btn_leaderboard'))
+          .setStyle(ButtonStyle.Secondary)
+          .setEmoji('🏆')
+      );
+
+      const refreshRow3 = new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder()
+          .setCustomId('dashboard_balance')
+          .setLabel(i18nService.t(locale, 'btn_balance'))
+          .setStyle(ButtonStyle.Secondary)
+          .setEmoji('⚖️'),
+        new ButtonBuilder()
+          .setCustomId('dashboard_draft')
+          .setLabel('Draft')
+          .setStyle(ButtonStyle.Secondary)
+          .setEmoji('🎯'),
+        new ButtonBuilder()
+          .setCustomId('dashboard_team')
+          .setLabel('Team')
+          .setStyle(ButtonStyle.Secondary)
+          .setEmoji('👥'),
+        new ButtonBuilder()
+          .setCustomId('dashboard_meta')
+          .setLabel(i18nService.t(locale, 'btn_meta'))
+          .setStyle(ButtonStyle.Secondary)
+          .setEmoji('⚔️')
+      );
+
+      const refreshRow4 = new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder()
+          .setCustomId('dashboard_heatmap')
+          .setLabel(i18nService.t(locale, 'btn_heatmap'))
+          .setStyle(ButtonStyle.Secondary)
+          .setEmoji('🗺️'),
+        new ButtonBuilder()
+          .setCustomId('dashboard_builds')
+          .setLabel(i18nService.t(locale, 'btn_build'))
+          .setStyle(ButtonStyle.Secondary)
+          .setEmoji('🛠️'),
+        new ButtonBuilder()
+          .setCustomId('dashboard_counter_matrix')
+          .setLabel('Counters')
+          .setStyle(ButtonStyle.Secondary)
+          .setEmoji('🔍'),
+        new ButtonBuilder()
+          .setCustomId('dashboard_live_match')
+          .setLabel('Live Match')
+          .setStyle(ButtonStyle.Secondary)
+          .setEmoji('📡'),
+        new ButtonBuilder()
+          .setCustomId('dashboard_meta_trends')
+          .setLabel('Meta Trends')
+          .setStyle(ButtonStyle.Secondary)
+          .setEmoji('📊')
+      );
+
+      const refreshRow5 = new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder()
+          .setCustomId('dashboard_skill_builder')
+          .setLabel('Skill Build')
+          .setStyle(ButtonStyle.Secondary)
+          .setEmoji('🎯'),
+        new ButtonBuilder()
+          .setCustomId('dashboard_rank_tracker')
+          .setLabel('Rank Tracker')
+          .setStyle(ButtonStyle.Secondary)
+          .setEmoji('🏆')
+      );
+
+      const refreshRow6 = new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder()
+          .setCustomId('dashboard_help')
+          .setLabel(i18nService.t(locale, 'btn_help'))
+          .setStyle(ButtonStyle.Secondary)
+          .setEmoji('❓'),
+        new ButtonBuilder()
+          .setCustomId('dashboard_refresh')
+          .setLabel(i18nService.t(locale, 'btn_refresh') || 'Atualizar')
+          .setStyle(ButtonStyle.Danger)
+          .setEmoji('🔄')
+      );
+
+      await interaction.editReply({
+        embeds: [refreshEmbed],
+        components: [refreshRow1, refreshRow2, refreshRow3, refreshRow4, refreshRow5, refreshRow6]
+      });
       return;
     }
 
@@ -270,63 +403,6 @@ const dashboardCommand: Command = {
       modal.addComponents(row);
 
       await interaction.showModal(modal);
-      return;
-    }
-
-    // Language Selection
-    if (buttonId === 'dashboard_language') {
-      const languageEmbed = new EmbedBuilder()
-        .setTitle('🌍 ' + (i18nService.t(locale, 'language_title') || 'Selecionar Idioma'))
-        .setDescription(i18nService.t(locale, 'language_description') || 'Escolha o idioma do bot para este servidor:');
-      applyTheme(languageEmbed, 'STRATEGY');
-
-      const languageRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
-        new ButtonBuilder()
-          .setCustomId('language_en')
-          .setLabel('🇺🇸 English')
-          .setStyle(ButtonStyle.Primary),
-        new ButtonBuilder()
-          .setCustomId('language_pt')
-          .setLabel('🇧🇷 Português')
-          .setStyle(ButtonStyle.Primary),
-        new ButtonBuilder()
-          .setCustomId('language_es')
-          .setLabel('🇪🇸 Español')
-          .setStyle(ButtonStyle.Primary)
-      );
-
-      await interaction.reply({
-        embeds: [languageEmbed],
-        components: [languageRow],
-        ephemeral: true,
-      });
-      return;
-    }
-
-    // Language selection handlers
-    if (buttonId.startsWith('language_')) {
-      const selectedLocale = buttonId.replace('language_', '') as import('../types/dota.js').Locale;
-      
-      await interaction.deferReply({ ephemeral: true });
-      
-      try {
-        // Update guild locale in database
-        await pool.query(
-          `INSERT INTO guild_settings (guild_id, locale, updated_at)
-           VALUES ($1, $2, NOW())
-           ON CONFLICT (guild_id) DO UPDATE SET locale = $2, updated_at = NOW()`,
-          [interaction.guild?.id, selectedLocale]
-        );
-
-        await interaction.editReply({
-          content: i18nService.t(selectedLocale, 'language_success') || '✅ Idioma atualizado com sucesso!',
-        });
-      } catch (error) {
-        console.error('Error updating language:', error);
-        await interaction.editReply({
-          content: i18nService.t(locale, 'error_generic') || '❌ Erro ao atualizar idioma.',
-        });
-      }
       return;
     }
 
