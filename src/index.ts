@@ -46,6 +46,7 @@ import { trackCommandLatency, createInteractionTracker } from './utils/commandLa
 
 // Import V2.0 Handler Modules
 import { handleModalSubmit as handleV2ModalSubmit } from './handlers/modalHandler.js';
+import { handleMenuButton } from './handlers/menuHandler.js';
 
 import type { Command } from './types/dota.js';
 
@@ -262,8 +263,12 @@ client.on(Events.InteractionCreate, (interaction: Interaction) => {
       }
       // Handle button interactions
       else if (interaction.isButton()) {
+        // Modern menu navigation (v2.3.0)
+        if (interaction.customId.startsWith('menu_')) {
+          await handleMenuButton(interaction);
+        }
         // Dashboard buttons (connect, profile, match, ai, etc)
-        if (interaction.customId.startsWith('dashboard_')) {
+        else if (interaction.customId.startsWith('dashboard_')) {
           const dashboardCommand = client.commands.get('dashboard');
           if (dashboardCommand?.handleButton) {
             await dashboardCommand.handleButton(interaction);

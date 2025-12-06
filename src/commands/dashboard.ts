@@ -29,6 +29,7 @@ import { resolveLocale } from '../utils/i18n.js';
 import { i18nService } from '../I18nService.js';
 import { CATEGORY_COLORS, applyTheme } from '../utils/embedTheme.js';
 import { createActionButtons } from '../utils/advancedButtons.js';
+import { buildMainMenu, buildMainMenuEmbed } from '../utils/menuBuilder.js';
 import type { Command } from '../types/dota.js';
 import type { Pool } from 'pg';
 
@@ -83,149 +84,14 @@ const dashboardCommand: Command = {
     // Get user's locale with priority chain
     const locale = await resolveLocale(interaction);
     
-    // ===== MODERN ENTERPRISE DASHBOARD 2024/2025 =====
-    // Cyberpunk Aesthetic with Clear Visual Hierarchy
-    const embed = new EmbedBuilder()
-      .setTitle('🎮 APOLO COMMAND CENTER')
-      .setDescription('**Painel de Controle Tático • Selecione um módulo abaixo**\n\n*Sistema de análise avançada com IA Gemini integrada*')
-      .setThumbnail('https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/global/dota2_logo_symbol.png')
-      .addFields(
-        { name: '👤 Player Stats', value: 'Perfil, Partidas e Histórico', inline: true },
-        { name: '🤖 AI Intelligence', value: 'Coach Gemini & Análise', inline: true },
-        { name: '⚙️ Server Tools', value: 'Configurações e Utilitários', inline: true },
-      )
-      .setImage('https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/blog/733_update_main.jpg')
-      .setFooter({ 
-        text: 'APOLO Dota 2 • v2.0 Enterprise Edition', 
-        iconURL: interaction.client.user?.displayAvatarURL() 
-      })
-      .setTimestamp();
-    
-    // Apply analytics theme color
-    applyTheme(embed, 'ANALYTICS');
-
-    // ROW 1: Primary Actions (Account & Status)
-    const row1 = new ActionRowBuilder<ButtonBuilder>().addComponents(
-      new ButtonBuilder()
-        .setCustomId('dashboard_connect')
-        .setLabel(i18nService.t(locale, 'btn_connect'))
-        .setStyle(ButtonStyle.Success) // Green = Entry Point
-        .setEmoji('🔗'),
-      new ButtonBuilder()
-        .setCustomId('dashboard_profile')
-        .setLabel(i18nService.t(locale, 'btn_profile'))
-        .setStyle(ButtonStyle.Primary) // Blue = Main Feature
-        .setEmoji('👤'),
-      new ButtonBuilder()
-        .setCustomId('dashboard_match')
-        .setLabel(i18nService.t(locale, 'btn_match'))
-        .setStyle(ButtonStyle.Primary)
-        .setEmoji('📊')
-    );
-
-    // ROW 2: Intelligence & Evolution (Premium Features)
-    const row2 = new ActionRowBuilder<ButtonBuilder>().addComponents(
-      new ButtonBuilder()
-        .setCustomId('dashboard_ai')
-        .setLabel(i18nService.t(locale, 'btn_ai_coach'))
-        .setStyle(ButtonStyle.Primary) // Premium Blue
-        .setEmoji('🤖'),
-      new ButtonBuilder()
-        .setCustomId('dashboard_progress')
-        .setLabel(i18nService.t(locale, 'btn_progress'))
-        .setStyle(ButtonStyle.Secondary) // Gray = Analytics
-        .setEmoji('📈'),
-      new ButtonBuilder()
-        .setCustomId('dashboard_leaderboard')
-        .setLabel(i18nService.t(locale, 'btn_leaderboard'))
-        .setStyle(ButtonStyle.Secondary)
-        .setEmoji('🏆')
-    );
-
-    // ROW 3: Tactical Tools
-    const row3 = new ActionRowBuilder<ButtonBuilder>().addComponents(
-      new ButtonBuilder()
-        .setCustomId('dashboard_balance')
-        .setLabel(i18nService.t(locale, 'btn_balance'))
-        .setStyle(ButtonStyle.Secondary)
-        .setEmoji('⚖️'),
-      new ButtonBuilder()
-        .setCustomId('dashboard_draft')
-        .setLabel('Draft')
-        .setStyle(ButtonStyle.Secondary)
-        .setEmoji('🎯'),
-      new ButtonBuilder()
-        .setCustomId('dashboard_team')
-        .setLabel('Team')
-        .setStyle(ButtonStyle.Secondary)
-        .setEmoji('👥'),
-      new ButtonBuilder()
-        .setCustomId('dashboard_meta')
-        .setLabel(i18nService.t(locale, 'btn_meta'))
-        .setStyle(ButtonStyle.Secondary)
-        .setEmoji('⚔️')
-    );
-
-    // ROW 4: More Tools
-    const row4alt = new ActionRowBuilder<ButtonBuilder>().addComponents(
-      new ButtonBuilder()
-        .setCustomId('dashboard_heatmap')
-        .setLabel(i18nService.t(locale, 'btn_heatmap'))
-        .setStyle(ButtonStyle.Secondary)
-        .setEmoji('🗺️'),
-      new ButtonBuilder()
-        .setCustomId('dashboard_builds')
-        .setLabel(i18nService.t(locale, 'btn_build'))
-        .setStyle(ButtonStyle.Secondary)
-        .setEmoji('🛠️'),
-      new ButtonBuilder()
-        .setCustomId('dashboard_counter_matrix')
-        .setLabel('Counters')
-        .setStyle(ButtonStyle.Secondary)
-        .setEmoji('🔍'),
-      new ButtonBuilder()
-        .setCustomId('dashboard_live_match')
-        .setLabel('Live Match')
-        .setStyle(ButtonStyle.Secondary)
-        .setEmoji('📡'),
-      new ButtonBuilder()
-        .setCustomId('dashboard_meta_trends')
-        .setLabel('Meta Trends')
-        .setStyle(ButtonStyle.Secondary)
-        .setEmoji('📊')
-    );
-
-    // ROW 5: Advanced Tools
-    const row5 = new ActionRowBuilder<ButtonBuilder>().addComponents(
-      new ButtonBuilder()
-        .setCustomId('dashboard_skill_builder')
-        .setLabel('Skill Build')
-        .setStyle(ButtonStyle.Secondary)
-        .setEmoji('🎯'),
-      new ButtonBuilder()
-        .setCustomId('dashboard_rank_tracker')
-        .setLabel('Rank Tracker')
-        .setStyle(ButtonStyle.Secondary)
-        .setEmoji('🏆')
-    );
-
-    // ROW 6: System & Configuration (Language auto-detected from Discord user locale)
-    const row6 = new ActionRowBuilder<ButtonBuilder>().addComponents(
-      new ButtonBuilder()
-        .setCustomId('dashboard_help')
-        .setLabel(i18nService.t(locale, 'btn_help'))
-        .setStyle(ButtonStyle.Secondary)
-        .setEmoji('❓'),
-      new ButtonBuilder()
-        .setCustomId('dashboard_refresh')
-        .setLabel(i18nService.t(locale, 'btn_refresh') || 'Atualizar')
-        .setStyle(ButtonStyle.Danger) // Red = Refresh/Reset
-        .setEmoji('🔄')
-    );
+    // ===== V2.3.0 MODERN HIERARCHICAL MENU SYSTEM =====
+    // 6 Main Categories with Smart Submenus
+    const embed = buildMainMenuEmbed(locale, interaction.client);
+    const buttons = buildMainMenu(locale);
 
     await interaction.reply({
       embeds: [embed],
-      components: [row1, row2, row3, row4alt, row5, row6],
+      components: buttons,
       ephemeral: true,
     });
   },
