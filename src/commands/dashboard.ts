@@ -37,6 +37,8 @@ let pool: Pool;
 let openDota: any;
 let dmOrEphemeral: any;
 let buttonHandler: any;
+let draftSimulator: any;
+let teamAnalyzer: any;
 let initialized = false;
 
 // Dynamic imports
@@ -47,6 +49,8 @@ async function initializeDependencies() {
   buttonHandler = await import('../handlers/buttonHandler.js');
   openDota = await import('../services/openDotaService.js');
   dmOrEphemeral = (await import('../utils/dm.js')).dmOrEphemeral;
+  draftSimulator = await import('../services/draftSimulatorService.js');
+  teamAnalyzer = await import('../services/teamAnalyzerService.js');
   
   initialized = true;
 }
@@ -142,10 +146,24 @@ const dashboardCommand: Command = {
         .setStyle(ButtonStyle.Secondary)
         .setEmoji('⚖️'),
       new ButtonBuilder()
+        .setCustomId('dashboard_draft')
+        .setLabel('Draft')
+        .setStyle(ButtonStyle.Secondary)
+        .setEmoji('🎯'),
+      new ButtonBuilder()
+        .setCustomId('dashboard_team')
+        .setLabel('Team')
+        .setStyle(ButtonStyle.Secondary)
+        .setEmoji('👥'),
+      new ButtonBuilder()
         .setCustomId('dashboard_meta')
         .setLabel(i18nService.t(locale, 'btn_meta'))
         .setStyle(ButtonStyle.Secondary)
-        .setEmoji('⚔️'),
+        .setEmoji('⚔️')
+    );
+
+    // ROW 4: More Tools
+    const row4alt = new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()
         .setCustomId('dashboard_heatmap')
         .setLabel(i18nService.t(locale, 'btn_heatmap'))
@@ -158,8 +176,8 @@ const dashboardCommand: Command = {
         .setEmoji('🛠️')
     );
 
-    // ROW 4: System & Configuration
-    const row4 = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    // ROW 5: System & Configuration
+    const row5 = new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()
         .setCustomId('dashboard_language')
         .setLabel(i18nService.t(locale, 'btn_language') || 'Idioma')
@@ -179,7 +197,7 @@ const dashboardCommand: Command = {
 
     await interaction.reply({
       embeds: [embed],
-      components: [row1, row2, row3, row4],
+      components: [row1, row2, row3, row4alt, row5],
       ephemeral: true,
     });
   },
@@ -774,6 +792,81 @@ const dashboardCommand: Command = {
         console.error('Error loading meta:', error);
         await interaction.editReply({
           content: i18nService.t(locale, 'error_api_unavailable'),
+        });
+      }
+      return;
+    }
+
+    // Draft Simulator
+    if (buttonId === 'dashboard_draft') {
+      await interaction.deferReply({ ephemeral: true });
+
+      try {
+        const availableHeroes = draftSimulator.getAvailableHeroes();
+        
+        const draftEmbed = new EmbedBuilder()
+          .setTitle('🎯 Draft Simulator')
+          .setDescription('*Advanced hero matchup analysis and counter-pick detection*\n\nAvailable heroes: ' + availableHeroes.length)
+          .addFields(
+            { 
+              name: '📊 Features', 
+              value: '• Matchup scoring (0-100)\n• Counter-pick detection\n• Team synergy analysis\n• Role-based recommendations', 
+              inline: false 
+            },
+            { 
+              name: '🎮 How it works', 
+              value: '1. Provide enemy team heroes\n2. Select your role\n3. Get counter recommendations\n4. See matchup scores & synergy', 
+              inline: false 
+            }
+          )
+          .setFooter({ text: 'Powered by Draft Simulator v1.0' })
+          .setTimestamp();
+        applyTheme(draftEmbed, 'STRATEGY');
+
+        await dmOrEphemeral(interaction, { embeds: [draftEmbed] });
+      } catch (error) {
+        console.error('Error loading draft simulator:', error);
+        await interaction.editReply({
+          content: i18nService.t(locale, 'error_generic'),
+        });
+      }
+      return;
+    }
+
+    // Team Analyzer
+    if (buttonId === 'dashboard_team') {
+      await interaction.deferReply({ ephemeral: true });
+
+      try {
+        const teamEmbed = new EmbedBuilder()
+          .setTitle('👥 Team Analyzer')
+          .setDescription('*Comprehensive team composition and synergy analysis*\n\nAnalyze team strengths, weaknesses, and potential')
+          .addFields(
+            { 
+              name: '📊 Analysis Metrics', 
+              value: '• Role distribution balance\n• Team synergy scoring\n• Strength/weakness identification\n• Skill level assessment', 
+              inline: false 
+            },
+            { 
+              name: '🎯 Recommendations', 
+              value: '• Suggested role adjustments\n• Counter-coverage gaps\n• Hero pool considerations\n• Team strategy insights', 
+              inline: false 
+            },
+            { 
+              name: '⚖️ Comparison', 
+              value: '• Head-to-head team analysis\n• Win probability estimation\n• Key battle scenarios', 
+              inline: false 
+            }
+          )
+          .setFooter({ text: 'Powered by Team Analyzer v1.0' })
+          .setTimestamp();
+        applyTheme(teamEmbed, 'TEAM');
+
+        await dmOrEphemeral(interaction, { embeds: [teamEmbed] });
+      } catch (error) {
+        console.error('Error loading team analyzer:', error);
+        await interaction.editReply({
+          content: i18nService.t(locale, 'error_generic'),
         });
       }
       return;
