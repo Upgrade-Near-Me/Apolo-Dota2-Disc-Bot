@@ -39,7 +39,8 @@
     "ioredis": "^5.8.2",
     "pg": "^8.11.3",
     "pino": "^9.5.0",
-    "prom-client": "^15.1.0"
+    "prom-client": "^15.1.0",
+    "zod": "^4.1.13"
   },
   "devDependencies": {
     "@types/eslint": "^9.6.1",
