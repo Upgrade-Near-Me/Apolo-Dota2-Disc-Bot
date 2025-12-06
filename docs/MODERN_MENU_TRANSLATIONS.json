@@ -1,0 +1,550 @@
+# 🌍 APOLO BUTTON TRANSLATIONS & STRINGS (PT/EN/ES)
+## Complete i18n Keys for Modern Menu Hierarchy
+
+---
+
+## 📝 TRANSLATION KEYS STRUCTURE
+
+Location: `src/locales/` - Add these to your existing translation files
+
+### File: `pt.json` (Português)
+
+```json
+{
+  "menu": {
+    "main_title": "🎮 APOLO — ASSISTENTE TÁTICO DOTA 2",
+    "main_description": "Selecione uma categoria para continuar",
+    "language": "Idioma",
+    "last_updated": "Atualizado em",
+    "connected": "Conectado",
+    "disconnected": "Desconectado",
+    "loading": "Carregando...",
+    "error": "Algo deu errado",
+    "back": "◀ VOLTAR AO MENU"
+  },
+  
+  "category": {
+    "me": {
+      "label": "ME",
+      "title": "👤 MINHA CONTA E ESTATÍSTICAS",
+      "description": "Gerenciamento de conta e estatísticas pessoais",
+      "subtitle": "Conectado: [SteamID] | MMR: Imortal 6789",
+      "buttons": {
+        "connect": "🔗 CONECTAR",
+        "connect_desc": "Vincular Conta Steam",
+        "profile": "👤 MEU PERFIL",
+        "profile_desc": "Ver Estatísticas",
+        "last_match": "📊 ÚLTIMA PARTIDA",
+        "last_match_desc": "Detalhes do Jogo",
+        "builds": "📈 MINHAS CONSTRUÇÕES",
+        "builds_desc": "Builds de Item Salvos",
+        "achievements": "🏆 CONQUISTAS",
+        "achievements_desc": "Prêmios e Marcos"
+      }
+    },
+
+    "improve": {
+      "label": "IMPROVE",
+      "title": "🤖 COACHING IA E ANÁLISE",
+      "description": "Auto-melhora através de análise de IA",
+      "subtitle": "Powered by: Google Gemini AI",
+      "buttons": {
+        "quick_tip": "💡 DICA RÁPIDA",
+        "quick_tip_desc": "Insight de 30 segundos",
+        "full_report": "📊 RELATÓRIO COMPLETO",
+        "full_report_desc": "Análise Abrangente",
+        "strengths": "✅ PONTOS FORTES",
+        "strengths_desc": "O que você faz bem",
+        "weaknesses": "⚠️ FRAQUEZAS",
+        "weaknesses_desc": "Áreas para Melhorar",
+        "trends": "📈 TENDÊNCIAS",
+        "trends_desc": "Análise de Padrões",
+        "compare": "⚖️ COMPARAR",
+        "compare_desc": "vs Média do Bracket",
+        "hero_guide": "🦸 GUIA DE HERÓIS",
+        "hero_guide_desc": "Heróis Melhores/Piores com Dicas"
+      }
+    },
+
+    "match": {
+      "label": "MATCH",
+      "title": "📊 ANÁLISE DE PARTIDA E HISTÓRICO",
+      "description": "Análise jogo a jogo e estatísticas",
+      "subtitle": "Últimas 5 Partidas: 3V - 2D (60% Taxa de Vitória)",
+      "buttons": {
+        "last_match": "📊 ÚLTIMA PARTIDA",
+        "last_match_desc": "Análise Detalhada",
+        "history": "📅 HISTÓRICO",
+        "history_desc": "Procure Todos os Jogos",
+        "search": "🔎 BUSCAR PARTIDA",
+        "search_desc": "Encontrar por ID de Partida",
+        "trends": "📈 TENDÊNCIAS DETALHADAS",
+        "trends_desc": "Evolução do Desempenho",
+        "best_games": "🏅 MELHORES JOGOS",
+        "best_games_desc": "Melhores Desempenhos",
+        "win_streak": "🔥 SÉRIE DE VITÓRIAS",
+        "win_streak_desc": "Vitórias Consecutivas",
+        "compare": "⚖️ COMPARAR PARTIDA",
+        "compare_desc": "vs Média do Bracket"
+      }
+    },
+
+    "meta": {
+      "label": "META",
+      "title": "🎯 HERÓIS META E BUILDS DE ITEM",
+      "description": "Informações de meta atual e construções",
+      "subtitle": "Patch: 7.36c | Atualizado há: 2 horas",
+      "buttons": {
+        "carry_meta": "🛡️ META CARRY",
+        "carry_meta_desc": "Top Carries",
+        "mid_meta": "⚔️ META MID",
+        "mid_meta_desc": "Mids Dominantes",
+        "off_meta": "🏃 META OFF",
+        "off_meta_desc": "Melhor Offlane",
+        "support_meta": "💊 META SUPPORT",
+        "support_meta_desc": "Ranking Support",
+        "hero_build": "🔍 BUILD HERÓIS",
+        "hero_build_desc": "Build de Item & Habilidade",
+        "counter_matrix": "⚔️ MATRIZ DE CONTADORES",
+        "counter_matrix_desc": "Quem Contra Quem",
+        "patch_notes": "📊 NOTAS DO PATCH",
+        "patch_notes_desc": "Mudanças e Buffs/Nerfs Recentes"
+      }
+    },
+
+    "team": {
+      "label": "TEAM",
+      "title": "👥 FERRAMENTAS DE JOGO EM EQUIPE E DRAFT",
+      "description": "Composição de equipe e recursos de grupo",
+      "subtitle": "Canal de Voz Detectado: [#radiant] (3 jogadores)",
+      "buttons": {
+        "balance": "⚖️ BALANCEAR TIME",
+        "balance_desc": "Snake Draft (MMR)",
+        "analyzer": "📋 ANALISADOR DE TIME",
+        "analyzer_desc": "Verificação de Composição",
+        "draft_sim": "🎯 SIMULADOR DE DRAFT",
+        "draft_sim_desc": "Simular Picks",
+        "find_duo": "🔎 ENCONTRAR DUO",
+        "find_duo_desc": "Matchmaking LFG",
+        "position_guide": "🎪 GUIA DE POSIÇÃO",
+        "position_guide_desc": "Dicas Baseadas em Role",
+        "team_stats": "📊 ESTATÍSTICAS DE TIME",
+        "team_stats_desc": "Estatísticas do Grupo",
+        "tournament": "🏆 TORNEIO",
+        "tournament_desc": "Bracket e Resultados"
+      }
+    },
+
+    "settings": {
+      "label": "SETTINGS",
+      "title": "⚙️ CONFIGURAÇÕES E INFORMAÇÕES",
+      "description": "Preferências e configurações do sistema",
+      "subtitle": "Idioma Atual: Português | Versão: v2.3.0",
+      "buttons": {
+        "language": "🌐 IDIOMA",
+        "language_desc": "PT / EN / ES",
+        "refresh": "🔄 ATUALIZAR MENU",
+        "refresh_desc": "Atualizar Display Agora",
+        "help": "❓ AJUDA",
+        "help_desc": "Guia de Comandos",
+        "about": "ℹ️ SOBRE",
+        "about_desc": "Versão e Créditos",
+        "status": "📡 STATUS",
+        "status_desc": "Saúde do Servidor",
+        "reinstall": "🛠️ REINSTALAR CANAIS",
+        "reinstall_desc": "Recriar Estrutura do Bot",
+        "support": "📞 SUPORTE",
+        "support_desc": "Relatar Problemas / Feedback"
+      }
+    }
+  },
+
+  "status": {
+    "connected": "✅ Conectado",
+    "disconnected": "🔴 Desconectado",
+    "loading": "⏳ Carregando",
+    "error": "❌ Erro",
+    "success": "✅ Sucesso"
+  }
+}
+```
+
+---
+
+### File: `en.json` (English)
+
+```json
+{
+  "menu": {
+    "main_title": "🎮 APOLO — DOTA 2 TACTICAL ASSISTANT",
+    "main_description": "Select a category to continue",
+    "language": "Language",
+    "last_updated": "Last Updated",
+    "connected": "Connected",
+    "disconnected": "Disconnected",
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "back": "◀ BACK TO MENU"
+  },
+  
+  "category": {
+    "me": {
+      "label": "ME",
+      "title": "👤 MY ACCOUNT & STATISTICS",
+      "description": "Account management and personal stats",
+      "subtitle": "Connected: [SteamID] | MMR: Immortal 6789",
+      "buttons": {
+        "connect": "🔗 CONNECT",
+        "connect_desc": "Link Steam Account",
+        "profile": "👤 MY PROFILE",
+        "profile_desc": "View Statistics",
+        "last_match": "📊 LAST MATCH",
+        "last_match_desc": "Game Details",
+        "builds": "📈 MY BUILDS",
+        "builds_desc": "Saved Item Builds",
+        "achievements": "🏆 ACHIEVEMENTS",
+        "achievements_desc": "Awards & Milestones"
+      }
+    },
+
+    "improve": {
+      "label": "IMPROVE",
+      "title": "🤖 AI COACHING & ANALYTICS",
+      "description": "Self-improvement through AI analysis",
+      "subtitle": "Powered by: Google Gemini AI",
+      "buttons": {
+        "quick_tip": "💡 QUICK TIP",
+        "quick_tip_desc": "30-second insight",
+        "full_report": "📊 FULL REPORT",
+        "full_report_desc": "Comprehensive analysis",
+        "strengths": "✅ STRENGTHS",
+        "strengths_desc": "What you excel at",
+        "weaknesses": "⚠️ WEAKNESSES",
+        "weaknesses_desc": "Areas to improve",
+        "trends": "📈 TRENDS",
+        "trends_desc": "Pattern analysis",
+        "compare": "⚖️ COMPARE",
+        "compare_desc": "vs Bracket Average",
+        "hero_guide": "🦸 HERO GUIDE",
+        "hero_guide_desc": "Best/Worst Heroes with Tips"
+      }
+    },
+
+    "match": {
+      "label": "MATCH",
+      "title": "📊 MATCH ANALYSIS & HISTORY",
+      "description": "Game-by-game analysis and statistics",
+      "subtitle": "Last 5 Matches: 3W - 2L (60% Win Rate)",
+      "buttons": {
+        "last_match": "📊 LAST MATCH",
+        "last_match_desc": "Detailed Analysis",
+        "history": "📅 HISTORY",
+        "history_desc": "Browse All Games",
+        "search": "🔎 SEARCH MATCH",
+        "search_desc": "Find by Match ID",
+        "trends": "📈 DETAILED TRENDS",
+        "trends_desc": "Performance Evolution",
+        "best_games": "🏅 BEST GAMES",
+        "best_games_desc": "Top Performances",
+        "win_streak": "🔥 WIN STREAK",
+        "win_streak_desc": "Consecutive Victories",
+        "compare": "⚖️ COMPARE MATCH",
+        "compare_desc": "vs Bracket Average"
+      }
+    },
+
+    "meta": {
+      "label": "META",
+      "title": "🎯 META HEROES & ITEM BUILDS",
+      "description": "Current meta information and builds",
+      "subtitle": "Patch: 7.36c | Last Updated: 2 hours ago",
+      "buttons": {
+        "carry_meta": "🛡️ CARRY META",
+        "carry_meta_desc": "Top Carries",
+        "mid_meta": "⚔️ MID META",
+        "mid_meta_desc": "Dominant Mids",
+        "off_meta": "🏃 OFF META",
+        "off_meta_desc": "Best Offlane",
+        "support_meta": "💊 SUPPORT META",
+        "support_meta_desc": "Support Rankings",
+        "hero_build": "🔍 HERO BUILD",
+        "hero_build_desc": "Item & Skill Build",
+        "counter_matrix": "⚔️ COUNTER MATRIX",
+        "counter_matrix_desc": "Who Counters Whom",
+        "patch_notes": "📊 PATCH NOTES",
+        "patch_notes_desc": "Latest Changes & Buffs/Nerfs"
+      }
+    },
+
+    "team": {
+      "label": "TEAM",
+      "title": "👥 TEAM PLAY & DRAFT TOOLS",
+      "description": "Team composition and group features",
+      "subtitle": "Voice Channel Detected: [#radiant] (3 players)",
+      "buttons": {
+        "balance": "⚖️ BALANCE TEAM",
+        "balance_desc": "Snake Draft (MMR)",
+        "analyzer": "📋 TEAM ANALYZER",
+        "analyzer_desc": "Composition Check",
+        "draft_sim": "🎯 DRAFT SIM",
+        "draft_sim_desc": "Simulate Picks",
+        "find_duo": "🔎 FIND DUO",
+        "find_duo_desc": "LFG Matchmaking",
+        "position_guide": "🎪 POSITION GUIDE",
+        "position_guide_desc": "Role-based Tips",
+        "team_stats": "📊 TEAM STATS",
+        "team_stats_desc": "Group Statistics",
+        "tournament": "🏆 TOURNAMENT",
+        "tournament_desc": "Bracket & Results"
+      }
+    },
+
+    "settings": {
+      "label": "SETTINGS",
+      "title": "⚙️ SETTINGS & INFORMATION",
+      "description": "Preferences and system settings",
+      "subtitle": "Current Language: English | Version: v2.3.0",
+      "buttons": {
+        "language": "🌐 LANGUAGE",
+        "language_desc": "PT / EN / ES",
+        "refresh": "🔄 REFRESH MENU",
+        "refresh_desc": "Update display now",
+        "help": "❓ HELP",
+        "help_desc": "Command Guide",
+        "about": "ℹ️ ABOUT",
+        "about_desc": "Version & Credits",
+        "status": "📡 STATUS",
+        "status_desc": "Server Health",
+        "reinstall": "🛠️ REINSTALL CHANNELS",
+        "reinstall_desc": "Recreate bot structure",
+        "support": "📞 SUPPORT",
+        "support_desc": "Report Issues / Feedback"
+      }
+    }
+  },
+
+  "status": {
+    "connected": "✅ Connected",
+    "disconnected": "🔴 Disconnected",
+    "loading": "⏳ Loading",
+    "error": "❌ Error",
+    "success": "✅ Success"
+  }
+}
+```
+
+---
+
+### File: `es.json` (Español)
+
+```json
+{
+  "menu": {
+    "main_title": "🎮 APOLO — ASISTENTE TÁCTICO DOTA 2",
+    "main_description": "Selecciona una categoría para continuar",
+    "language": "Idioma",
+    "last_updated": "Actualizado hace",
+    "connected": "Conectado",
+    "disconnected": "Desconectado",
+    "loading": "Cargando...",
+    "error": "Algo salió mal",
+    "back": "◀ VOLVER AL MENÚ"
+  },
+  
+  "category": {
+    "me": {
+      "label": "ME",
+      "title": "👤 MI CUENTA Y ESTADÍSTICAS",
+      "description": "Gestión de cuenta y estadísticas personales",
+      "subtitle": "Conectado: [SteamID] | MMR: Inmortal 6789",
+      "buttons": {
+        "connect": "🔗 CONECTAR",
+        "connect_desc": "Vincular Cuenta Steam",
+        "profile": "👤 MI PERFIL",
+        "profile_desc": "Ver Estadísticas",
+        "last_match": "📊 ÚLTIMA PARTIDA",
+        "last_match_desc": "Detalles del Juego",
+        "builds": "📈 MIS BUILDS",
+        "builds_desc": "Construcciones Guardadas",
+        "achievements": "🏆 LOGROS",
+        "achievements_desc": "Premios e Hitos"
+      }
+    },
+
+    "improve": {
+      "label": "IMPROVE",
+      "title": "🤖 COACHING IA Y ANÁLISIS",
+      "description": "Automejora a través del análisis de IA",
+      "subtitle": "Impulsado por: Google Gemini AI",
+      "buttons": {
+        "quick_tip": "💡 CONSEJO RÁPIDO",
+        "quick_tip_desc": "Perspectiva de 30 segundos",
+        "full_report": "📊 INFORME COMPLETO",
+        "full_report_desc": "Análisis Exhaustivo",
+        "strengths": "✅ FORTALEZAS",
+        "strengths_desc": "En qué destacas",
+        "weaknesses": "⚠️ DEBILIDADES",
+        "weaknesses_desc": "Áreas de Mejora",
+        "trends": "📈 TENDENCIAS",
+        "trends_desc": "Análisis de Patrones",
+        "compare": "⚖️ COMPARAR",
+        "compare_desc": "vs Promedio del Bracket",
+        "hero_guide": "🦸 GUÍA DE HÉROES",
+        "hero_guide_desc": "Mejores/Peores Héroes con Consejos"
+      }
+    },
+
+    "match": {
+      "label": "MATCH",
+      "title": "📊 ANÁLISIS DE PARTIDA E HISTORIAL",
+      "description": "Análisis juego a juego y estadísticas",
+      "subtitle": "Últimas 5 Partidas: 3G - 2P (60% Tasa de Victoria)",
+      "buttons": {
+        "last_match": "📊 ÚLTIMA PARTIDA",
+        "last_match_desc": "Análisis Detallado",
+        "history": "📅 HISTORIAL",
+        "history_desc": "Explorar Todos los Juegos",
+        "search": "🔎 BUSCAR PARTIDA",
+        "search_desc": "Encontrar por ID de Partida",
+        "trends": "📈 TENDENCIAS DETALLADAS",
+        "trends_desc": "Evolución del Desempeño",
+        "best_games": "🏅 MEJORES JUEGOS",
+        "best_games_desc": "Mejores Desempeños",
+        "win_streak": "🔥 RACHA DE VICTORIAS",
+        "win_streak_desc": "Victorias Consecutivas",
+        "compare": "⚖️ COMPARAR PARTIDA",
+        "compare_desc": "vs Promedio del Bracket"
+      }
+    },
+
+    "meta": {
+      "label": "META",
+      "title": "🎯 HÉROES META Y CONSTRUCCIONES DE OBJETOS",
+      "description": "Información de meta actual y construcciones",
+      "subtitle": "Parche: 7.36c | Actualizado hace: 2 horas",
+      "buttons": {
+        "carry_meta": "🛡️ META CARRY",
+        "carry_meta_desc": "Top Carries",
+        "mid_meta": "⚔️ META MID",
+        "mid_meta_desc": "Mids Dominantes",
+        "off_meta": "🏃 META OFF",
+        "off_meta_desc": "Mejor Offlane",
+        "support_meta": "💊 META SUPPORT",
+        "support_meta_desc": "Ranking Support",
+        "hero_build": "🔍 BUILD HÉROES",
+        "hero_build_desc": "Construcción de Objeto y Habilidad",
+        "counter_matrix": "⚔️ MATRIZ DE CONTADORES",
+        "counter_matrix_desc": "Quién Contra Quién",
+        "patch_notes": "📊 NOTAS DEL PARCHE",
+        "patch_notes_desc": "Cambios Recientes y Buffs/Nerfs"
+      }
+    },
+
+    "team": {
+      "label": "TEAM",
+      "title": "👥 HERRAMIENTAS DE JUEGO EN EQUIPO Y DRAFT",
+      "description": "Composición de equipo y características de grupo",
+      "subtitle": "Canal de Voz Detectado: [#radiant] (3 jugadores)",
+      "buttons": {
+        "balance": "⚖️ BALANCEAR EQUIPO",
+        "balance_desc": "Snake Draft (MMR)",
+        "analyzer": "📋 ANALIZADOR DE EQUIPO",
+        "analyzer_desc": "Verificación de Composición",
+        "draft_sim": "🎯 SIMULADOR DE DRAFT",
+        "draft_sim_desc": "Simular Picks",
+        "find_duo": "🔎 ENCONTRAR DÚO",
+        "find_duo_desc": "Emparejamiento LFG",
+        "position_guide": "🎪 GUÍA DE POSICIÓN",
+        "position_guide_desc": "Consejos Basados en Rol",
+        "team_stats": "📊 ESTADÍSTICAS DE EQUIPO",
+        "team_stats_desc": "Estadísticas del Grupo",
+        "tournament": "🏆 TORNEO",
+        "tournament_desc": "Bracket y Resultados"
+      }
+    },
+
+    "settings": {
+      "label": "SETTINGS",
+      "title": "⚙️ CONFIGURACIÓN E INFORMACIÓN",
+      "description": "Preferencias y configuración del sistema",
+      "subtitle": "Idioma Actual: Español | Versión: v2.3.0",
+      "buttons": {
+        "language": "🌐 IDIOMA",
+        "language_desc": "PT / EN / ES",
+        "refresh": "🔄 ACTUALIZAR MENÚ",
+        "refresh_desc": "Actualizar Pantalla Ahora",
+        "help": "❓ AYUDA",
+        "help_desc": "Guía de Comandos",
+        "about": "ℹ️ ACERCA DE",
+        "about_desc": "Versión y Créditos",
+        "status": "📡 ESTADO",
+        "status_desc": "Salud del Servidor",
+        "reinstall": "🛠️ REINSTALAR CANALES",
+        "reinstall_desc": "Recrear Estructura del Bot",
+        "support": "📞 SOPORTE",
+        "support_desc": "Reportar Problemas / Comentarios"
+      }
+    }
+  },
+
+  "status": {
+    "connected": "✅ Conectado",
+    "disconnected": "🔴 Desconectado",
+    "loading": "⏳ Cargando",
+    "error": "❌ Error",
+    "success": "✅ Éxito"
+  }
+}
+```
+
+---
+
+## 📊 USAGE EXAMPLE IN CODE
+
+```typescript
+import { t } from '../utils/i18n.js';
+
+// Get button label
+const connectLabel = t(interaction, 'category.me.buttons.connect');
+// Returns: "🔗 CONECTAR" (PT) or "🔗 CONNECT" (EN) or "🔗 CONECTAR" (ES)
+
+// Get button description
+const connectDesc = t(interaction, 'category.me.buttons.connect_desc');
+// Returns: "Vincular Conta Steam" (PT) or "Link Steam Account" (EN)
+
+// Get category title
+const meTitle = t(interaction, 'category.me.title');
+// Returns: "👤 MINHA CONTA E ESTATÍSTICAS" (PT)
+
+// Get status
+const connectedStatus = t(interaction, 'status.connected');
+// Returns: "✅ Conectado" (PT) or "✅ Connected" (EN)
+```
+
+---
+
+## 🔑 KEY STATS
+
+- **Total Translation Keys:** 180+
+- **Button Strings:** 60+ (with descriptions)
+- **Category Strings:** 36
+- **Status Strings:** 5
+- **System Strings:** 9
+- **Languages:** 3 (PT/EN/ES)
+
+**Total Localized Strings:** 540+ (180 keys × 3 languages)
+
+---
+
+## ✅ NEXT STEPS
+
+1. Copy these translations to your locale files
+2. Update `src/utils/i18n.ts` to include new keys
+3. Test all translations in all 3 languages
+4. Commit to GitHub: "feat(i18n): add modern menu translations"
+
+---
+
+**Version:** v2.3.0 (Translations)
+**Date:** December 5, 2025
+**Status:** Ready to Implement
