@@ -106,15 +106,21 @@ services:
       - /tmp
       - /app/.npm
     
-    # Resource limits (adjust based on VPS capacity)
+    # Resource limits (Protection against memory leaks & CPU spikes)
+    # CRITICAL: These limits ensure APOLO never impacts other VPS projects
     deploy:
       resources:
         limits:
-          cpus: '1.0'
-          memory: 512M
+          cpus: '1.0'      # Max 1 CPU core (other projects protected)
+          memory: 1G       # Max 1GB RAM (prevents OOM killing other containers)
         reservations:
-          cpus: '0.25'
-          memory: 256M
+          cpus: '0.5'      # Guaranteed 0.5 core
+          memory: 512M     # Guaranteed 512MB
+      restart_policy:
+        condition: any     # Restart on failure (isolation maintained)
+        delay: 5s
+        max_attempts: 3
+        window: 120s
 
 # ==========================================
 # NOTES:

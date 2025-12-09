@@ -17,7 +17,16 @@
     "test:coverage": "vitest run --coverage",
     "test:ui": "vitest --ui",
     "type-check": "tsc --noEmit",
-    "lint": "eslint src/**/*.ts"
+    "lint": "eslint src/**/*.ts",
+    "monitor:ci": "tsx scripts/monitor-ci.ts",
+    "monitor:ci:watch": "tsx scripts/monitor-ci.ts --watch",
+    "monitor:ci:export": "tsx scripts/monitor-ci.ts --export json && tsx scripts/monitor-ci.ts --export html",
+    "health:check": "tsx scripts/health-check.ts",
+    "health:check:verbose": "tsx scripts/health-check.ts --verbose",
+    "health:check:export": "tsx scripts/health-check.ts --export json",
+    "report": "tsx scripts/report.ts",
+    "report:quick": "tsx scripts/report.ts --quick",
+    "report:export": "tsx scripts/report.ts --export json && tsx scripts/report.ts --export html"
   },
   "keywords": [
     "discord",

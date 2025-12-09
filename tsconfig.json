@@ -47,7 +47,8 @@
   /* Include/Exclude */
   "include": [
     "src/**/*",                                  /* Include all TypeScript files in src/ */
-    "tests/**/*"                                 /* Include test files */
+    "tests/**/*",                                /* Include test files */
+    "scripts/**/*"                               /* Include monitoring scripts */
   ],
   "exclude": [
     "node_modules",                              /* Exclude dependencies */

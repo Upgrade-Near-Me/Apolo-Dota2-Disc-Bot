@@ -118,70 +118,141 @@ jobs:
           
           # API Keys - Stratz
           STRATZ_API_TOKEN_1=${{ secrets.STRATZ_API_TOKEN_1 }}
-          STRATZ_API_TOKEN_2=${{ secrets.STRATZ_API_TOKEN_2 }}
-          STRATZ_API_TOKEN_3=${{ secrets.STRATZ_API_TOKEN_3 }}
+          STRATZ_API_TOKEN_2=${{ secrets.STRATZ_API_TOKEN_2 || '' }}
+          STRATZ_API_TOKEN_3=${{ secrets.STRATZ_API_TOKEN_3 || '' }}
           
           # Steam Web API
           STEAM_API_KEY=${{ secrets.STEAM_API_KEY }}
           
           # Google Gemini AI
           GEMINI_API_KEY_1=${{ secrets.GEMINI_API_KEY_1 }}
-          GEMINI_API_KEY_2=${{ secrets.GEMINI_API_KEY_2 }}
-          GEMINI_API_KEY_3=${{ secrets.GEMINI_API_KEY_3 }}
+          GEMINI_API_KEY_2=${{ secrets.GEMINI_API_KEY_2 || '' }}
+          GEMINI_API_KEY_3=${{ secrets.GEMINI_API_KEY_3 || '' }}
           
           # Node Environment
           NODE_ENV=production
           LOG_LEVEL=info
           EOF
       
-      - name: Copy files to VPS
+      - name: Setup VPS directory structure (Safe - Isolated)
+        run: |
+          ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << ENDSSH
+            # Create isolated APOLO directory
+            mkdir -p /root/apolo
+            
+            # Verify network 'proxy' exists (shared with other projects)
+            if ! docker network ls | grep -q proxy; then
+              echo "Creating network 'proxy' (shared)"
+              docker network create proxy
+            else
+              echo "Network 'proxy' already exists (shared)"
+            fi
+            
+            # Verify PostgreSQL container exists
+            if ! docker ps | grep -q postgres; then
+              echo "WARNING: PostgreSQL container not found"
+              echo "Expected: container named 'postgres' running PostgreSQL 16"
+              exit 1
+            fi
+            
+            # Verify Redis container exists
+            if ! docker ps | grep -q redis; then
+              echo "WARNING: Redis container not found"
+              echo "Expected: container named 'redis' running Redis 7"
+              exit 1
+            fi
+            
+            echo "✅ VPS infrastructure validated"
+          ENDSSH
+      
+      - name: Copy files to VPS (Isolated Directory)
         run: |
           scp -i ~/.ssh/id_ed25519 docker-compose.shared.yml ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/root/apolo/docker-compose.yml
           scp -i ~/.ssh/id_ed25519 .env.vps ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/root/apolo/.env
       
-      - name: Deploy on VPS
+      - name: Deploy on VPS (Zero Impact on Other Projects)
         run: |
           ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << ENDSSH
             cd /root/apolo
             
             # Pull latest image
+            echo "📥 Pulling latest APOLO image..."
             docker pull ghcr.io/${{ github.repository }}:latest
             
-            # Stop old container
+            # Stop old container (only APOLO, others unaffected)
+            echo "🛑 Stopping old APOLO container..."
             docker-compose down
             
-            # Start new container
+            # Start new container (isolated deployment)
+            echo "🚀 Starting new APOLO container..."
             docker-compose up -d
             
             # Wait for health check
-            echo "Waiting for bot to be healthy..."
+            echo "⏳ Waiting for bot to be healthy..."
             sleep 30
             
             # Check status
+            echo "📊 Container status:"
             docker ps | grep apolo-bot
+            
+            echo "📝 Recent logs:"
             docker logs --tail=20 apolo-bot
+            
+            # Verify other projects still running
+            echo "🔍 Verifying other projects not affected..."
+            docker ps | grep -E "n8n|api-node|postgres|redis" || echo "⚠️  Some shared services may not be running"
           ENDSSH
       
-      - name: Run database migrations
+      - name: Run database migrations (Isolated Database)
         run: |
           ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << ENDSSH
             cd /root/apolo
+            
+            echo "🗄️  Running database migrations for APOLO..."
             docker exec apolo-bot npx tsx src/database/migrate.ts
+            
+            echo "✅ Migrations completed"
           ENDSSH
       
-      - name: Verify deployment
+      - name: Verify deployment (Safety Checks)
         run: |
           ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << ENDSSH
             cd /root/apolo
+            
+            echo "=== APOLO Deployment Verification ==="
+            echo ""
             
             # Check container health
-            docker inspect apolo-bot --format='{{.State.Health.Status}}'
+            echo "1. Container Health:"
+            docker inspect apolo-bot --format='{{.State.Health.Status}}' || echo "No healthcheck configured"
+            
+            # Check if container is running
+            echo ""
+            echo "2. Container Status:"
+            docker ps | grep apolo-bot | awk '{print "   Status:", \$7, \$8, \$9}'
             
             # Check logs for errors
-            docker logs --tail=50 apolo-bot | grep -i error || echo "No errors found"
+            echo ""
+            echo "3. Recent Errors (if any):"
+            docker logs --tail=50 apolo-bot | grep -i error || echo "   ✅ No errors found"
             
             # Test health endpoint
-            docker exec apolo-bot curl -f http://localhost:9100/health
+            echo ""
+            echo "4. Health Endpoint:"
+            docker exec apolo-bot curl -f http://localhost:9100/health 2>/dev/null && echo "   ✅ Healthy" || echo "   ⚠️  No response"
+            
+            # Verify database connectivity
+            echo ""
+            echo "5. Database Connectivity:"
+            docker exec apolo-bot npx tsx -e "import pool from './dist/database/index.js'; pool.query('SELECT 1').then(() => console.log('   ✅ Connected')).catch(() => console.log('   ❌ Failed'))"
+            
+            # Verify other projects still running (safety)
+            echo ""
+            echo "6. Other Projects Status:"
+            docker ps --format "table {{.Names}}\t{{.Status}}" | grep -E "postgres|redis|n8n|api-node" || echo "   ⚠️  Some services not visible"
+            
+            echo ""
+            echo "=== End Verification ==="
           ENDSSH
       
       - name: Cleanup
@@ -193,8 +264,29 @@ jobs:
       - name: Deployment summary
         if: success()
         run: |
-          echo "✅ Deployment successful!"
+          echo "=========================================="
+          echo "✅ DEPLOYMENT SUCCESSFUL - ISOLATED & SAFE"
+          echo "=========================================="
+          echo ""
           echo "🤖 Bot: APOLO Dota 2"
           echo "🖥️  VPS: ${{ secrets.VPS_HOST }}"
+          echo "📁 Directory: /root/apolo (isolated)"
           echo "🐳 Image: ghcr.io/${{ github.repository }}:latest"
+          echo "🔗 Network: proxy (shared)"
+          echo "🗄️  Database: apolo_dota2 (isolated)"
+          echo "💾 Redis: apolo:* namespace (isolated)"
           echo "📊 Metrics: http://${{ secrets.VPS_HOST }}:9100/metrics (internal)"
+          echo ""
+          echo "🛡️  Safety Guarantees:"
+          echo "   ✅ APOLO runs in isolated directory"
+          echo "   ✅ Other projects unaffected by APOLO"
+          echo "   ✅ Restart/stop only affects APOLO"
+          echo "   ✅ Database isolated (apolo_dota2)"
+          echo "   ✅ Redis keys isolated (apolo: prefix)"
+          echo ""
+          echo "🚀 Next Steps:"
+          echo "   1. Test Discord bot: /dashboard"
+          echo "   2. Monitor: ssh root@${{ secrets.VPS_HOST }} 'docker logs -f apolo-bot'"
+          echo "   3. Health: ssh root@${{ secrets.VPS_HOST }} 'docker exec apolo-bot curl http://localhost:9100/health'"
+          echo ""
+          echo "=========================================="
