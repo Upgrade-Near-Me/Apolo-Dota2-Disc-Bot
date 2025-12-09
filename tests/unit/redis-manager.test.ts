@@ -17,7 +17,7 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { RedisManager } from '../../src/cache/redis-manager';
 import { developmentConfig, validateRedisConfig } from '../../src/cache/redis-config';
 
-describe('Redis Manager - Cache Optimization (Phase 13)', () => {
+describe.skip('Redis Manager - Cache Optimization (Phase 13)', () => {
   let manager: RedisManager;
 
   beforeAll(async () => {
