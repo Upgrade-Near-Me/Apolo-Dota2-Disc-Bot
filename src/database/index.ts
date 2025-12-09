@@ -16,7 +16,10 @@ pool.on('connect', () => {
 
 pool.on('error', (err: Error) => {
   logger.fatal({ error: err }, '❌ Unexpected database error');
-  process.exit(-1);
+  // Don't exit in test environment to allow tests to handle errors gracefully
+  if (process.env.NODE_ENV !== 'test') {
+    process.exit(-1);
+  }
 });
 
 // Query helper
