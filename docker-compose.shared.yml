@@ -9,8 +9,8 @@ version: '3.8'
 # ==========================================
 
 networks:
-  proxy:
-    external: true  # Uses existing VPS network
+  zapclaudio-network:
+    external: true  # Uses existing VPS network (shared infrastructure)
 
 services:
   # ==========================================
@@ -22,7 +22,7 @@ services:
     restart: always
     
     networks:
-      - proxy
+      - zapclaudio-network
     
     environment:
       # Discord Configuration
@@ -85,10 +85,8 @@ services:
     expose:
       - "9100"
     
-    # Wait for shared services to be ready
-    depends_on:
-      - postgres
-      - redis
+    # NOTE: postgres and redis are EXTERNAL containers (shared VPS infrastructure)
+    # No depends_on needed - they're always running
     
     # Persistent logs
     volumes:
