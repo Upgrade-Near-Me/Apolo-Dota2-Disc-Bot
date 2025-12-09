@@ -9,7 +9,7 @@ version: '3.8'
 # ==========================================
 
 networks:
-  zapclaudio-network:
+  proxy:
     external: true  # Uses existing VPS network
 
 services:
@@ -22,7 +22,7 @@ services:
     restart: always
     
     networks:
-      - zapclaudio-network
+      - proxy
     
     environment:
       # Discord Configuration
