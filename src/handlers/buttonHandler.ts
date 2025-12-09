@@ -2026,13 +2026,9 @@ async function handleDashboardMatch(interaction: ButtonInteraction): Promise<voi
 
     // 6. Create MODERN Discord embed (MEE6/Arcane-inspired)
     const matchXpGain = 50 + Math.round((matchData.duration / 60) * 5);
-    const impLabel = await tInteraction(interaction as any, 'imp_score_label');
-    const xpLabel = await tInteraction(interaction as any, 'xp_gained', { xp: matchXpGain, level: levelState.level });
-    const awardsLabel = await tInteraction(interaction as any, 'awards_title');
     const noAwardsLabel = await tInteraction(interaction as any, 'awards_none');
 
     // Dynamic color based on performance
-    const winrate = isWin ? 100 : 0;
     const embedColor = getPerformanceColor(kda, { excellent: 6, good: 4, average: 2, poor: 1 });
 
     // Awards display with emojis

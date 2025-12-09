@@ -12,7 +12,8 @@ on:
 env:
   NODE_VERSION: '20.18.1'
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  # Use a fixed, lowercase image path to avoid GHCR tag normalization issues
+  REGISTRY_IMAGE: ghcr.io/upgrade-near-me/apolo
   POSTGRES_VERSION: '14-alpine'
   REDIS_VERSION: '7-alpine'
 
@@ -151,7 +152,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY_IMAGE }}
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=sha,prefix={{branch}}-
@@ -249,8 +250,8 @@ jobs:
           # Export environment variables
           export DISCORD_TOKEN="${{ secrets.DISCORD_TOKEN }}"
           export DISCORD_CLIENT_ID="${{ secrets.DISCORD_CLIENT_ID }}"
-          export DATABASE_URL="${{ secrets.DATABASE_URL }}"
-          export REDIS_URL="${{ secrets.REDIS_URL }}"
+          # Use docker-compose.shared.yml environment variables (passed via .env on VPS)
+          # DATABASE_URL and REDIS_URL are managed by VPS .env file
           export STRATZ_API_TOKEN_1="${{ secrets.STRATZ_API_TOKEN_1 }}"
           export STEAM_API_KEY="${{ secrets.STEAM_API_KEY }}"
           export GEMINI_API_KEY_1="${{ secrets.GEMINI_API_KEY_1 }}"
@@ -265,7 +266,7 @@ jobs:
           
           # Pull latest image
           echo "📦 Pulling latest image..."
-          docker pull ghcr.io/${{ github.repository }}:latest || \
+          docker pull ghcr.io/upgrade-near-me/apolo:latest || \
             (echo "⚠️ Image pull failed, deployment may use cached version"; true)
           
           # Deploy with docker-compose

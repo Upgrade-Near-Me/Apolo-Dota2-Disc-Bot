@@ -5,12 +5,12 @@ version: '3.8'
 # ==========================================
 # Production deployment using SHARED PostgreSQL 16 + Redis 7
 # VPS: zapclaudio.com (31.97.103.184)
-# Network: zapclaudio-network (external - managed by VPS)
+# Network: proxy (external - managed by VPS, same as other projects)
 # ==========================================
 
 networks:
   proxy:
-    external: true  # Uses existing VPS network (shared infrastructure)
+    external: true  # Uses existing VPS network (proxy - shared infrastructure)
 
 services:
   # ==========================================

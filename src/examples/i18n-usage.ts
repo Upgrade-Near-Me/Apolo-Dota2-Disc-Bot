@@ -5,10 +5,11 @@
  * in Discord.js commands with TypeScript.
  */
 
-import { 
-  SlashCommandBuilder, 
-  ChatInputCommandInteraction, 
-  EmbedBuilder,
+import {
+  SlashCommandBuilder,
+  ChatInputCommandInteraction
+} from 'discord.js';
+import type { Pool } from 'pg';
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle
@@ -196,8 +197,8 @@ async function handleLanguageChange(interaction: ChatInputCommandInteraction, ne
 
   try {
     // Import pool dynamically (since it's a .js file)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { default: pool } = await import('../database/index.js') as { default: any };
+    const poolModule = await import('../database/index.js');
+    const pool = poolModule.default as Pool;
     
     // Update database
     await pool.query(

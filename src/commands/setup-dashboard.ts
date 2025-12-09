@@ -47,9 +47,9 @@ async function syncCategory(
   categoryName: string,
   position: number
 ): Promise<CategoryChannel> {
-  let category = guild.channels.cache.find(
-    (ch) => ch.name === categoryName && ch.type === ChannelType.GuildCategory
-  ) as CategoryChannel | undefined;
+  const category = guild.channels.cache.find(
+    (ch): ch is CategoryChannel => ch.name === categoryName && ch.type === ChannelType.GuildCategory
+  );
 
   if (category) {
     console.log(`✅ Category exists: ${categoryName}`);
@@ -57,13 +57,17 @@ async function syncCategory(
   }
 
   console.log(`🆕 Creating category: ${categoryName}`);
-  category = await guild.channels.create({
+  const created = await guild.channels.create({
     name: categoryName,
     type: ChannelType.GuildCategory,
     position,
   });
 
-  return category as CategoryChannel;
+  if (created.type !== ChannelType.GuildCategory) {
+    throw new Error('Failed to create category channel');
+  }
+
+  return created;
 }
 
 /**
@@ -77,8 +81,8 @@ async function syncTextChannel(
   topic?: string
 ): Promise<TextChannel> {
   let channel = guild.channels.cache.find(
-    (ch) => ch.name === channelName && ch.type === ChannelType.GuildText
-  ) as TextChannel | undefined;
+    (ch): ch is TextChannel => ch.name === channelName && ch.type === ChannelType.GuildText
+  );
 
   if (channel) {
     console.log(`♻️ Updating channel: ${channelName}`);
@@ -108,22 +112,26 @@ async function syncTextChannel(
     topic,
   });
 
-  return channel as TextChannel;
+  if (channel.type !== ChannelType.GuildText) {
+    throw new Error('Failed to create text channel');
+  }
+
+  return channel;
 }
 
 /**
  * Sync a voice channel (create or update permissions/limit)
  */
 async function syncVoiceChannel(
-  guild: any,
+  guild: Guild,
   channelName: string,
   parentId: string,
   permissions: OverwriteResolvable[],
   userLimit: number
 ): Promise<VoiceChannel> {
   let channel = guild.channels.cache.find(
-    (ch: any) => ch.name === channelName && ch.type === ChannelType.GuildVoice
-  ) as VoiceChannel | undefined;
+    (ch): ch is VoiceChannel => ch.name === channelName && ch.type === ChannelType.GuildVoice
+  );
 
   if (channel) {
     console.log(`♻️ Updating voice channel: ${channelName}`);
@@ -153,7 +161,11 @@ async function syncVoiceChannel(
     userLimit,
   });
 
-  return channel as VoiceChannel;
+  if (channel.type !== ChannelType.GuildVoice) {
+    throw new Error('Failed to create voice channel');
+  }
+
+  return channel;
 }
 
 /**

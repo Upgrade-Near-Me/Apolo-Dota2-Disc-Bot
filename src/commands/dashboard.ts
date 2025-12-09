@@ -27,8 +27,7 @@ import {
 } from 'discord.js';
 import { resolveLocale } from '../utils/i18n.js';
 import { i18nService } from '../I18nService.js';
-import { CATEGORY_COLORS, applyTheme } from '../utils/embedTheme.js';
-import { createActionButtons } from '../utils/advancedButtons.js';
+import { applyTheme } from '../utils/embedTheme.js';
 import { buildMainMenu, buildMainMenuEmbed } from '../utils/menuBuilder.js';
 import type { Command } from '../types/dota.js';
 import type { Pool } from 'pg';
@@ -898,8 +897,6 @@ const dashboardCommand: Command = {
           });
           return;
         }
-
-        const steamId = userResult.rows[0].steam_id;
 
         // Check for live match (simulated - would need real-time API)
         const liveEmbed = new EmbedBuilder()
