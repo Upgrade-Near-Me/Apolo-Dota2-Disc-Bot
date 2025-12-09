@@ -141,7 +141,7 @@ jobs:
       
       - name: Deploy on VPS
         run: |
-          ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'ENDSSH'
+          ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << ENDSSH
             cd /root/apolo
             
             # Pull latest image
@@ -164,14 +164,14 @@ jobs:
       
       - name: Run database migrations
         run: |
-          ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'ENDSSH'
+          ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << ENDSSH
             cd /root/apolo
             docker exec apolo-bot npx tsx src/database/migrate.ts
           ENDSSH
       
       - name: Verify deployment
         run: |
-          ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'ENDSSH'
+          ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << ENDSSH
             cd /root/apolo
             
             # Check container health

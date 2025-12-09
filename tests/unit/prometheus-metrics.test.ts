@@ -13,7 +13,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { MetricsCollector } from '../src/monitoring/metrics-collector';
+import { MetricsCollector } from '../../src/monitoring/metrics-collector';
 
 /**
  * ========================================================================

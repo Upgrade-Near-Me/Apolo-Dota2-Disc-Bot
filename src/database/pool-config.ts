@@ -97,6 +97,24 @@ export const poolConfig: Record<'development' | 'production' | 'staging', PoolOp
     failoverThreshold: 80,               // Trigger failover at 80% utilization
     failoverPoolSize: 20,                // Reserve 20 connections for critical ops
   },
+
+  /**
+   * Test: Minimal configuration for unit/integration tests
+   */
+  test: {
+    max: 5,                              // Small pool for tests
+    min: 1,
+    idleTimeoutMillis: 10000,            // 10 seconds
+    connectionTimeoutMillis: 2000,
+    statement_timeout: 5000,
+    statement_cache_size: 50,
+    connectionHealthCheckInterval: 60000,
+    enableConnectionValidation: false,    // Faster tests
+    connectionValidationQuery: 'SELECT 1',
+    enableFailover: false,
+    failoverThreshold: 90,
+    failoverPoolSize: 1,
+  },
 };
 
 /**
@@ -110,7 +128,7 @@ export function getPoolConfig(): PoolOptimizationConfig {
 
   if (!(env in poolConfig)) {
     throw new Error(
-      `Invalid NODE_ENV: ${env}. Must be one of: development, staging, production`
+      `Invalid NODE_ENV: ${env}. Must be one of: development, staging, production, test`
     );
   }
 
