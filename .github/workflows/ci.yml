@@ -55,6 +55,12 @@ jobs:
       - name: Build TypeScript
         run: npm run build
 
+      - name: Run database migrations
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/apolo_dota2_test
+          NODE_ENV: test
+        run: npx tsx src/database/migrate.ts
+
       - name: Run unit tests
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/apolo_dota2_test
