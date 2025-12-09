@@ -220,8 +220,9 @@ async function runMigrations(): Promise<void> {
   }
 }
 
-// Run migrations if executed directly
-if (import.meta.url === `file://${process.argv[1]}`) {
+// Run migrations if executed directly (works in all environments)
+const isMainModule = process.argv[1] && import.meta.url.endsWith(process.argv[1]);
+if (isMainModule || process.argv.includes('migrate.ts') || process.argv.includes('migrate.js')) {
   void runMigrations();
 }
 
