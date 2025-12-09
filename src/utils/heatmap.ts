@@ -9,7 +9,7 @@ interface HeatmapLabels {
 }
 
 interface HeatmapPayload {
-  matchId: number;
+  matchId: string;
   durationSeconds: number;
   observers: WardPlacement[];
   sentries: WardPlacement[];

@@ -921,7 +921,7 @@ const dashboardCommand: Command = {
           )
           .setFooter({ text: 'Live Match Tracker v1.0 • Check back during your next game!' })
           .setTimestamp();
-        applyTheme(liveEmbed, 'INFO');
+        applyTheme(liveEmbed, 'LIVE');
 
         await interaction.editReply({ embeds: [liveEmbed] });
       } catch (error) {
@@ -971,7 +971,7 @@ const dashboardCommand: Command = {
           )
           .setFooter({ text: 'Meta Trends v1.0 • Data from 50,000+ matches this week' })
           .setTimestamp();
-        applyTheme(metaEmbed, 'SUCCESS');
+        applyTheme(metaEmbed, 'STRATEGY');
 
         await interaction.editReply({ embeds: [metaEmbed] });
       } catch (error) {
@@ -1065,7 +1065,7 @@ const dashboardCommand: Command = {
           )
           .setFooter({ text: 'Rank Tracker v1.0 • MMR data synchronized with Steam' })
           .setTimestamp();
-        applyTheme(rankEmbed, 'SUCCESS');
+        applyTheme(rankEmbed, 'ANALYTICS');
 
         await interaction.editReply({ embeds: [rankEmbed] });
       } catch (error) {
@@ -1397,14 +1397,14 @@ const dashboardCommand: Command = {
           .addFields(
             { 
               name: '⚡ Ability Progression', 
-              value: skillBuild.sequence.map(s => 
+              value: skillBuild.sequence.map((s: any) => 
                 `**Lvl ${s.level}:** ${s.ability}\n  └ *${s.notes}*`
               ).join('\n\n') || 'No data', 
               inline: false 
             },
             { 
               name: '🔥 Power Spikes', 
-              value: skillBuild.power_spikes.map(p => 
+              value: skillBuild.power_spikes.map((p: any) => 
                 `**Lvl ${p.level}:** ${p.spike}`
               ).join('\n') || 'No spikes', 
               inline: false 

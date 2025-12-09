@@ -19,7 +19,8 @@ RUN apk upgrade --no-cache && \
     apk add --no-cache \
     dumb-init \
     font-noto \
-    fontconfig
+    fontconfig \
+    curl
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
@@ -33,17 +34,25 @@ COPY --from=deps --chown=nodejs:nodejs /app/node_modules ./node_modules
 # Copy application code
 COPY --chown=nodejs:nodejs . .
 
+# Create logs directory with proper permissions
+RUN mkdir -p /app/logs && chown -R nodejs:nodejs /app/logs
+
 # Switch to non-root user
 USER nodejs
 
-# Environment
+# Environment (can be overridden at runtime)
 ENV NODE_ENV=production
+ENV METRICS_HOST=0.0.0.0
+ENV METRICS_PORT=9100
 
-# Healthcheck
+# Expose metrics port (internal only)
+EXPOSE 9100
+
+# Healthcheck - check if bot metrics endpoint is responding
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD node -e "process.exit(0)"
+    CMD curl -f http://localhost:9100/health || exit 1
 
-# Use dumb-init to handle signals properly
+# Use dumb-init to handle signals properly (graceful shutdown)
 ENTRYPOINT ["dumb-init", "--"]
 
 # Start application with tsx to run TypeScript directly

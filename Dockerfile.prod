@@ -1,0 +1,91 @@
+# ==========================================
+# APOLO DOTA 2 BOT - PRODUCTION DOCKERFILE
+# ==========================================
+# Multi-stage build for optimized production image
+# Stage 1: Dependencies
+# Stage 2: TypeScript build
+# Stage 3: Production runtime
+# ==========================================
+
+# ==========================================
+# STAGE 1: DEPENDENCIES
+# ==========================================
+FROM node:20.18.1-alpine3.21 AS deps
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install ALL dependencies (including devDependencies for build)
+RUN npm ci
+
+# ==========================================
+# STAGE 2: BUILDER (TypeScript Compilation)
+# ==========================================
+FROM node:20.18.1-alpine3.21 AS builder
+
+WORKDIR /app
+
+# Copy dependencies from deps stage
+COPY --from=deps /app/node_modules ./node_modules
+
+# Copy source code and config files
+COPY package*.json ./
+COPY tsconfig.json ./
+COPY src ./src
+
+# Build TypeScript → JavaScript (output to dist/)
+RUN npm run build
+
+# ==========================================
+# STAGE 3: PRODUCTION RUNNER
+# ==========================================
+FROM node:20.18.1-alpine3.21 AS runner
+
+WORKDIR /app
+
+# Install security updates
+RUN apk upgrade --no-cache
+
+# Install dumb-init for proper signal handling
+RUN apk add --no-cache dumb-init curl
+
+# Create non-root user for security
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
+
+# Copy package files
+COPY package*.json ./
+
+# Install ONLY production dependencies (no devDependencies)
+RUN npm ci --omit=dev && \
+    npm cache clean --force
+
+# Copy compiled JavaScript from builder stage
+COPY --from=builder /app/dist ./dist
+
+# Copy database migrations (needed at runtime)
+COPY migrations ./migrations
+
+# Copy locales (needed at runtime)
+COPY src/locales ./src/locales
+
+# Set ownership to non-root user
+RUN chown -R nodejs:nodejs /app
+
+# Switch to non-root user
+USER nodejs
+
+# Expose metrics port (internal only)
+EXPOSE 9100
+
+# Health check endpoint
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=40s \
+  CMD curl -f http://localhost:9100/health || exit 1
+
+# Use dumb-init to handle signals properly
+ENTRYPOINT ["dumb-init", "--"]
+
+# Run compiled JavaScript (not TypeScript)
+CMD ["node", "dist/index.js"]

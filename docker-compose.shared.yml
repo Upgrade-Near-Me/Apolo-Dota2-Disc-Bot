@@ -1,0 +1,133 @@
+version: '3.8'
+
+# ==========================================
+# APOLO DOTA 2 BOT - VPS SHARED INFRASTRUCTURE
+# ==========================================
+# Production deployment using SHARED PostgreSQL 16 + Redis 7
+# VPS: zapclaudio.com (31.97.103.184)
+# Network: zapclaudio-network (external - managed by VPS)
+# ==========================================
+
+networks:
+  zapclaudio-network:
+    external: true  # Uses existing VPS network
+
+services:
+  # ==========================================
+  # APOLO Discord Bot
+  # ==========================================
+  apolo-bot:
+    image: ghcr.io/upgrade-near-me/apolo:latest
+    container_name: apolo-bot
+    restart: always
+    
+    networks:
+      - zapclaudio-network
+    
+    environment:
+      # Discord Configuration
+      DISCORD_TOKEN: ${DISCORD_TOKEN}
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
+      DISCORD_GUILD_ID: ${DISCORD_GUILD_ID:-}
+      
+      # Database - SHARED PostgreSQL 16 (external container)
+      DATABASE_URL: postgresql://${APOLO_DB_USER}:${APOLO_DB_PASSWORD}@postgres:5432/${APOLO_DB_NAME}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${APOLO_DB_NAME}
+      DB_USER: ${APOLO_DB_USER}
+      DB_PASSWORD: ${APOLO_DB_PASSWORD}
+      
+      # Redis - SHARED Redis 7 (external container with namespace isolation)
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      REDIS_PREFIX: apolo  # Namespace isolation: apolo:*
+      
+      # API Keys - Stratz (supports rotation 1-10)
+      STRATZ_API_TOKEN_1: ${STRATZ_API_TOKEN_1}
+      STRATZ_API_TOKEN_2: ${STRATZ_API_TOKEN_2:-}
+      STRATZ_API_TOKEN_3: ${STRATZ_API_TOKEN_3:-}
+      STRATZ_API_TOKEN_4: ${STRATZ_API_TOKEN_4:-}
+      STRATZ_API_TOKEN_5: ${STRATZ_API_TOKEN_5:-}
+      STRATZ_API_TOKEN_6: ${STRATZ_API_TOKEN_6:-}
+      STRATZ_API_TOKEN_7: ${STRATZ_API_TOKEN_7:-}
+      STRATZ_API_TOKEN_8: ${STRATZ_API_TOKEN_8:-}
+      STRATZ_API_TOKEN_9: ${STRATZ_API_TOKEN_9:-}
+      STRATZ_API_TOKEN_10: ${STRATZ_API_TOKEN_10:-}
+      
+      # Steam Web API
+      STEAM_API_KEY: ${STEAM_API_KEY}
+      
+      # Google Gemini AI (supports rotation 1-10)
+      GEMINI_API_KEY_1: ${GEMINI_API_KEY_1}
+      GEMINI_API_KEY_2: ${GEMINI_API_KEY_2:-}
+      GEMINI_API_KEY_3: ${GEMINI_API_KEY_3:-}
+      GEMINI_API_KEY_4: ${GEMINI_API_KEY_4:-}
+      GEMINI_API_KEY_5: ${GEMINI_API_KEY_5:-}
+      GEMINI_API_KEY_6: ${GEMINI_API_KEY_6:-}
+      GEMINI_API_KEY_7: ${GEMINI_API_KEY_7:-}
+      GEMINI_API_KEY_8: ${GEMINI_API_KEY_8:-}
+      GEMINI_API_KEY_9: ${GEMINI_API_KEY_9:-}
+      GEMINI_API_KEY_10: ${GEMINI_API_KEY_10:-}
+      
+      # Node Environment
+      NODE_ENV: production
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      
+      # Metrics (internal only - for Prometheus)
+      METRICS_PORT: 9100
+      METRICS_HOST: 0.0.0.0
+    
+    # NO public ports (Discord bot doesn't need external access)
+    # Metrics port exposed only internally for Prometheus
+    expose:
+      - "9100"
+    
+    # Wait for shared services to be ready
+    depends_on:
+      - postgres
+      - redis
+    
+    # Persistent logs
+    volumes:
+      - ./logs:/app/logs
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9100/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    # Security: read-only filesystem (except /tmp)
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/.npm
+    
+    # Resource limits (adjust based on VPS capacity)
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+# ==========================================
+# NOTES:
+# ==========================================
+# 1. PostgreSQL 16 and Redis 7 are EXTERNAL containers (managed by VPS)
+# 2. Network "zapclaudio-network" is EXTERNAL (shared with other projects)
+# 3. Database "apolo_dota2" must be created manually in PostgreSQL
+# 4. Redis namespace "apolo:*" ensures cache isolation
+# 5. No ports exposed publicly (Discord bot uses Gateway WebSocket)
+# 6. Metrics on port 9100 are internal (Prometheus scraping)
+# 7. Logs are persisted to ./logs directory
+# 8. Health check on /health endpoint (9100)
+# 9. Deploy automatically via GitHub Actions on push to main
+# 10. Zero downtime for other VPS projects during APOLO updates

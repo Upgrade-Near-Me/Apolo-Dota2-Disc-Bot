@@ -102,7 +102,7 @@ describe('i18n Service', () => {
       const key = 'missing_only_in_en';
       
       // Check if key exists in PT, if not use EN
-      const result = mockTranslations[locale][key] || mockTranslations['en'][key];
+      const result = (mockTranslations[locale] as any)[key] || (mockTranslations['en'] as any)[key];
       expect(result).toBe('English only text');
     });
 
@@ -110,7 +110,7 @@ describe('i18n Service', () => {
       const locale = 'pt' as Locale;
       const key = 'completely_missing_key';
       
-      const result = mockTranslations[locale][key] || mockTranslations['en'][key] || key;
+      const result = (mockTranslations[locale] as any)[key] || (mockTranslations['en'] as any)[key] || key;
       expect(result).toBe('completely_missing_key');
     });
 
@@ -131,7 +131,7 @@ describe('i18n Service', () => {
       
       let result = template;
       Object.keys(params).forEach((key) => {
-        result = result.replace(`{${key}}`, params[key]);
+        result = result.replace(`{${key}}`, params[key as keyof typeof params]);
       });
       
       expect(result).toBe('Welcome, JohnDoe!');
@@ -143,7 +143,7 @@ describe('i18n Service', () => {
       
       let result = template;
       Object.keys(params).forEach((key) => {
-        result = result.replace(`{${key}}`, params[key]);
+        result = result.replace(`{${key}}`, params[key as keyof typeof params]);
       });
       
       expect(result).toBe('Invoker got 10 kills and 2 deaths');
@@ -155,7 +155,7 @@ describe('i18n Service', () => {
       
       let result = template;
       Object.keys(params).forEach((key) => {
-        result = result.replace(`{${key}}`, params[key]);
+        result = result.replace(`{${key}}`, params[key as keyof typeof params]);
       });
       
       // Template should remain unchanged
@@ -168,7 +168,7 @@ describe('i18n Service', () => {
       
       let result = template;
       Object.keys(params).forEach((key) => {
-        result = result.replace(`{${key}}`, params[key]);
+        result = result.replace(`{${key}}`, params[key as keyof typeof params]);
       });
       
       expect(result).toBe('Player Alice joined EU-West at {time}');
@@ -180,7 +180,7 @@ describe('i18n Service', () => {
       
       let result = template;
       Object.keys(params).forEach((key) => {
-        result = result.replace(`{${key}}`, params[key]);
+        result = result.replace(`{${key}}`, params[key as keyof typeof params]);
       });
       
       expect(result).toBe('Match duration: 45 minutes');
@@ -192,7 +192,7 @@ describe('i18n Service', () => {
       
       let result = template;
       Object.keys(params).forEach((key) => {
-        result = result.replace(`{${key}}`, params[key]);
+        result = result.replace(`{${key}}`, params[key as keyof typeof params]);
       });
       
       expect(result).toBe('Message: Hello <world> & "friends"');

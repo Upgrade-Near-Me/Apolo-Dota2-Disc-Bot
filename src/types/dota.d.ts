@@ -162,6 +162,8 @@ export interface ParsedStratzPlayer {
   totalMatches: number;
   winRate: number;
   rank: string | number;
+  avgGpm?: number;
+  avgXpm?: number;
   topHeroes: Array<{
     name: string;
     matches: number;

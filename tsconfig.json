@@ -18,7 +18,6 @@
     "esModuleInterop": true,                     /* Enable default imports from CommonJS */
     "allowSyntheticDefaultImports": true,        /* Allow 'import x from y' when no default export */
     "isolatedModules": true,                     /* Ensure each file can be transpiled independently */
-    "skipLibCheck": true,                        /* Skip type checking of declaration files */
     "resolveJsonModule": true,                   /* Allow importing .json files */
     "forceConsistentCasingInFileNames": true,    /* Enforce consistent file name casing */
     

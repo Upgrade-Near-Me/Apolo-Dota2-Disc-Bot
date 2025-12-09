@@ -169,11 +169,11 @@ export function getSkillBuild(
   );
 
   if (buildKey) {
-    return heroBuilds[buildKey];
+    return heroBuilds[buildKey] ?? null;
   }
 
   // Fallback to first available build
-  return Object.values(heroBuilds)[0] || null;
+  return Object.values(heroBuilds)[0] ?? null;
 }
 
 /**
@@ -226,7 +226,9 @@ export function compareBuilds(
     build1,
     build2,
     differences: {
-      early_priority: `${build1.sequence[0].ability} vs ${build2.sequence[0].ability}`,
+      early_priority: build1.sequence[0] && build2.sequence[0] 
+        ? `${build1.sequence[0].ability} vs ${build2.sequence[0].ability}`
+        : 'N/A',
       reasoning: {
         build1: build1.reasoning,
         build2: build2.reasoning,

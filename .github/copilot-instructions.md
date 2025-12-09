@@ -77,6 +77,70 @@
 - **Development:** tsx watch (auto-reload during development)
 - **Build System:** TypeScript compiler with source maps
 
+### Deployment Architecture
+
+**APOLO supports two deployment modes:**
+
+1. **🏠 Local Development (docker-compose.yml)**
+   - PostgreSQL 14 + Redis 7 (isolated containers)
+   - Dockerfile with tsx hot-reload
+   - Full stack: bot, postgres, redis, prometheus, grafana
+   - Perfect for development and testing
+
+2. **☁️ VPS Shared Infrastructure (docker-compose.shared.yml)**
+   - Production deployment on zapclaudio.com VPS
+   - Shares PostgreSQL 16 + Redis 7 with other projects (n8n, api-node, etc)
+   - Dockerfile.prod with TypeScript compilation
+   - CI/CD via GitHub Actions (auto-deploy on push to main)
+   - Namespace isolation: `apolo:*` for Redis, `apolo_dota2` database
+   - Zero interference with other VPS projects
+
+**VPS Architecture:**
+```
+VPS Host (zapclaudio.com - 31.97.103.184)
+├── Container: apolo-bot (APOLO Discord Bot) ← NEW
+├── Container: n8n (Workflow Automation)
+├── Container: api-node-template
+├── Container: discord-bot-template
+├── Container: PostgreSQL 16 (SHARED)
+│   ├── Database: n8n_db
+│   ├── Database: api_node_db
+│   ├── Database: discord_bot_db
+│   └── Database: apolo_dota2 ← NEW
+├── Container: Redis 7 (SHARED with namespace isolation)
+│   ├── Namespace: n8n:*
+│   ├── Namespace: api:*
+│   ├── Namespace: discord:*
+│   └── Namespace: apolo:* ← NEW
+├── Container: Traefik (Reverse Proxy + SSL)
+└── Container: Portainer (Docker GUI Management)
+```
+
+**Key Files:**
+- `Dockerfile` - Local dev (tsx runtime)
+- `Dockerfile.prod` - Production (compiled TypeScript)
+- `docker-compose.yml` - Local dev environment
+- `docker-compose.shared.yml` - VPS shared infrastructure
+- `.github/workflows/ci.yml` - CI testing
+- `.github/workflows/deploy-vps.yml` - CD deployment
+
+**Deployment Flow:**
+```
+git push origin main
+  ↓
+GitHub Actions CI (test + build)
+  ↓
+Build Dockerfile.prod → Push to GHCR
+  ↓
+SSH to VPS → docker-compose pull
+  ↓
+Restart apolo-bot container
+  ↓
+Bot online (zero downtime for other projects)
+```
+
+**Complete Guide:** See `docs/VPS_SHARED_INTEGRATION_GUIDE.md`
+
 ## Architecture
 
 ### Command Structure
@@ -1409,9 +1473,9 @@ docker-compose exec bot node src/deploy-commands.js
 For help:
 
 - Check [README.md](../README.md) for general documentation
-- Review [SETUP.md](../SETUP.md) for installation guide
-- Read [FEATURES.md](../FEATURES.md) for feature details
-- See [DOCKER.md](../DOCKER.md) for container deployment
+- Review [SETUP.md](../docs/setup/SETUP.md) for installation guide
+- Read [FEATURES.md](../docs/features/FEATURES.md) for feature details
+- See [VPS Shared Guide](../docs/deployment/VPS_SHARED_INTEGRATION_GUIDE.md) for deployment
 
 ---
 

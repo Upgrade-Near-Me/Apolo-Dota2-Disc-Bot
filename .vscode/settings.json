@@ -1,0 +1,26 @@
+{
+  "yaml.customTags": [
+    "!encrypted/pkcs1-oaep scalar",
+    "!vault scalar"
+  ],
+  "yaml.validate": true,
+  "yaml.completion": true,
+  "yaml.hover": true,
+  
+  // Suppress GitHub Actions secrets warnings (will be configured in PASSO 2)
+  "yaml.schemas": {
+    "https://json.schemastore.org/github-workflow.json": ".github/workflows/*.yml"
+  },
+  
+  // Suppress Docker vulnerabilities warnings (Alpine CVEs - standard practice)
+  "docker.languageserver.diagnostics.warnings": {
+    "instructionWorkdirRelative": "ignore",
+    "instructionJSONInSingleQuotes": "ignore"
+  },
+  
+  // Optional: Hide warnings from Problems panel temporarily
+  "problems.decorations.enabled": true,
+  "problems.visibility": {
+    "warning": "on"
+  }
+}

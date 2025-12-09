@@ -8,7 +8,13 @@ export type AwardKey =
   | 'comeback_win'
   | 'iron_wall'
   | 'rapid_game'
-  | 'marathon_game';
+  | 'marathon_game'
+  | 'precision_striker'
+  | 'performance_peak'
+  | 'team_player'
+  | 'carry_dominance'
+  | 'rampage_master'
+  | 'rising_star';
 
 export interface AwardResult {
   keys: AwardKey[];

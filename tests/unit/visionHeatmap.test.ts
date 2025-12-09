@@ -75,7 +75,7 @@ describe('generateWardHeatmap', () => {
   it('renders heatmap buffer using ward data and labels', async () => {
     const buffer = await generateWardHeatmap(
       {
-        matchId: 42,
+        matchId: '42',
         durationSeconds: 1200,
         observers: [{ x: 64, y: 64, time: 100, type: 'observer', side: 'RADIANT' }],
         sentries: [{ x: 32, y: 96, time: 200, type: 'sentry', side: 'DIRE' }],

@@ -1917,7 +1917,7 @@ async function handleDashboardHeatmap(interaction: ButtonInteraction): Promise<v
       return;
     }
 
-    const vision = await openDota.getMatchVision(matchData.matchId);
+    const vision = await openDota.getMatchVision(Number(matchData.matchId));
     if (!vision || (vision.observers.length === 0 && vision.sentries.length === 0)) {
       await interaction.editReply({ content: await tInteraction(interaction as any, 'error_heatmap_no_data') });
       return;
@@ -2079,7 +2079,14 @@ async function handleDashboardMatch(interaction: ButtonInteraction): Promise<voi
       ? (await Promise.all(
           awardsResult.keys.map(async (k) => {
             const txt = await tInteraction(interaction as any, `award_${k}`);
-            const emoji = k === 'godlike_streak' ? '🔥' : k === 'flash_farmer' ? '💰' : k === 'unkillable' ? '🛡️' : '🎖️';
+            const emoji = k === 'godlike_streak' ? '🔥' : 
+                         k === 'flash_farmer' ? '💰' : 
+                         k === 'precision_striker' ? '🎯' : 
+                         k === 'performance_peak' ? '🏆' : 
+                         k === 'team_player' ? '🤝' : 
+                         k === 'carry_dominance' ? '💪' : 
+                         k === 'rampage_master' ? '🎪' : 
+                         k === 'rising_star' ? '⭐' : '🛡️';
             return `${emoji} ${txt}`;
           })
         )).join('\n')
@@ -2335,7 +2342,7 @@ async function handleDashboardProfile(interaction: ButtonInteraction): Promise<v
     const winrateLabel = await tInteraction(interaction, 'profile_winrate');
     const rankLabel = await tInteraction(interaction, 'profile_rank');
 
-    const rankDisplay = getRankBadge(profile.rank);
+    const rankDisplay = getRankBadge(String(profile.rank));
     const performanceEmoji = getPerformanceEmoji(winRateNum);
     const winrateBar = createProgressBar(winRateNum);
 

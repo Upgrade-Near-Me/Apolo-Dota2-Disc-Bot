@@ -5,9 +5,11 @@
 [![Node.js Version](https://img.shields.io/badge/node-20.18.1-brightgreen.svg)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3-blue.svg)](https://www.typescriptlang.org/)
 [![Discord.js](https://img.shields.io/badge/discord.js-14.14.1-blue.svg)](https://discord.js.org/)
-[![PostgreSQL](https://img.shields.io/badge/postgresql-14-blue.svg)](https://www.postgresql.org/)
+[![PostgreSQL](https://img.shields.io/badge/postgresql-14%20%7C%2016-blue.svg)](https://www.postgresql.org/)
 [![Redis](https://img.shields.io/badge/redis-7-red.svg)](https://redis.io/)
 [![Docker](https://img.shields.io/badge/docker-compose-blue.svg)](https://www.docker.com/)
+[![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-2088FF.svg)](https://github.com/features/actions)
+[![Deployment](https://img.shields.io/badge/deployment-VPS%20Shared-success.svg)](docs/VPS_SHARED_INTEGRATION_GUIDE.md)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 ## 📋 Overview
@@ -37,12 +39,14 @@
 
 **Infrastructure:**
 
-- ✅ Docker Production Deployment
-- ✅ PostgreSQL + Redis Stack
+- ✅ Docker Production Deployment (Local + VPS Shared)
+- ✅ PostgreSQL 14 (Local) | PostgreSQL 16 (VPS Shared)
+- ✅ Redis 7 (Local + VPS Shared with namespace isolation)
+- ✅ CI/CD via GitHub Actions (auto-deploy to VPS)
 - ✅ Prometheus Metrics + Grafana Dashboards
 - ✅ 100+ Tests Passing (Unit + E2E)
 
-**Roadmap:** See [`docs/ROADMAP_2025.md`](docs/ROADMAP_2025.md)
+**Roadmap:** See [`docs/roadmap/ROADMAP_2025.md`](docs/roadmap/ROADMAP_2025.md)
 
 ### ✨ Key Features
 
@@ -60,6 +64,12 @@
 - 🎨 **Professional Dashboard** - Centralized control panel with 8 specialized channels
 
 ## 🚀 Quick Start
+
+> **💡 Deployment Options:** APOLO supports two deployment modes:
+> - **🏠 Local Development:** Complete Docker Compose stack with PostgreSQL 14 + Redis 7
+> - **☁️ VPS Shared Infrastructure:** Production deployment using shared PostgreSQL 16 + Redis 7
+> 
+> See [VPS Shared Integration Guide](docs/VPS_SHARED_INTEGRATION_GUIDE.md) for production deployment.
 
 ### Prerequisites
 
@@ -159,32 +169,35 @@ npm run dev
 
 ## 📚 Documentation
 
-### Getting Started
+### 🚀 Getting Started
 
-- [📖 Setup Guide](SETUP.md) - Detailed installation instructions
-- [⚡ Quick Start](QUICKSTART.md) - Get running in 5 minutes
-- [🐳 Docker Guide](DOCKER.md) - Container deployment
+- [⚡ Complete Setup Guide](docs/setup/SETUP.md) - Installation, Docker, and Quick Start (all-in-one)
 
-### Features & Architecture
+### ✨ Features
 
-- [🆕 Features Guide](FEATURES.md) - Complete feature documentation
-- [📝 Project Summary](PROJECT_SUMMARY.md) - Technical architecture overview
-- [🌍 I18n Guide](docs/I18N_GUIDE.md) - Multi-language implementation
-- [🚀 I18n Quick Reference](docs/I18N_QUICK_REFERENCE.md) - Translation code examples
+- [🎮 Features Overview](docs/features/FEATURES.md) - Complete feature documentation
+- [🌍 I18n Guide](docs/features/I18N.md) - Multi-language system with usage patterns
+- [🤖 AI Coach](docs/features/AI_COACH.md) - AI analysis tools
 
-### Operations & Monitoring
+### 🏗️ Architecture & Guides
 
-- [📊 Prometheus Metrics](docs/PROMETHEUS_METRICS_GUIDE.md) - Metrics collection and dashboards
-- [⏱️ Command Latency Tracking](docs/COMMAND_LATENCY_TRACKING_GUIDE.md) - Performance monitoring
-- [⚡ Redis Optimization](docs/REDIS_QUICK_REFERENCE.md) - Caching strategies
-- [🗄️ Database Optimization](docs/TASK_7_DATABASE_OPTIMIZATION.md) - Connection pooling and tuning
+- [📝 Project Summary](docs/architecture/PROJECT_SUMMARY.md) - Technical architecture
+- [🚀 Scaling Guide](docs/architecture/SCALING.md) - Infrastructure for 1M+ users
+- [✅ Validation Layer](docs/architecture/VALIDATION_LAYER.md) - Input validation system
+- [💾 Database Guide](docs/guides/DATABASE.md) - PostgreSQL optimization
+- [⚡ Redis Guide](docs/guides/REDIS.md) - Caching strategies
+- [📊 Prometheus Metrics](docs/guides/PROMETHEUS.md) - Monitoring & dashboards
+- [⏱️ Command Latency](docs/guides/COMMAND_LATENCY.md) - Performance tracking
 
-### Roadmap & Scaling
+### 🚢 Deployment
 
-- [🗺️ Roadmap 2025](docs/ROADMAP_2025.md) - Feature roadmap and timeline
-- [🚀 Scale to 1M Users](docs/SCALE_1M_ROADMAP.md) - Infrastructure scaling plan
-- [📋 Launch Checklist](docs/LAUNCH_CHECKLIST.md) - Production deployment checklist
-- [🔍 Implementation Status](docs/IMPLEMENTATION_STATUS.md) - Current feature status
+- [✅ Launch Checklist](docs/deployment/LAUNCH_CHECKLIST.md) - Production readiness
+- [🖥️ VPS Deployment Guide](docs/deployment/VPS_DEPLOYMENT_GUIDE.md) - Complete server deployment
+- [📋 VPS Deployment Checklist](docs/deployment/VPS_DEPLOYMENT_CHECKLIST.md) - Step-by-step validation
+
+### 🗺️ Roadmap
+
+- [📅 Roadmap](docs/roadmap/ROADMAP.md) - 2025 timeline, milestones, and growth strategy
 
 ## 🎮 Commands & Features
 
@@ -655,6 +668,52 @@ docker-compose exec bot npx tsx src/database/migrate.ts
 # Deploy commands
 docker-compose exec bot npx tsx src/deploy-commands.ts
 ```
+
+### VPS Shared Infrastructure Deployment (Recommended for Production)
+
+**APOLO integrates seamlessly with existing VPS infrastructure, sharing PostgreSQL and Redis with other applications.**
+
+**Architecture:**
+- ✅ Shared PostgreSQL 16 (separate database: `apolo_dota2`)
+- ✅ Shared Redis 7 (namespace isolation: `apolo:*`)
+- ✅ Auto-deploy via GitHub Actions on push to `main`
+- ✅ Zero interference with other projects (n8n, api-node, etc)
+
+**Quick Setup:**
+
+1. **Configure GitHub Secrets** (in repository settings)
+
+   ```yaml
+   GHCR_TOKEN: <github_personal_access_token>
+   VPS_HOST: <your_vps_ip>
+   VPS_USER: root
+   VPS_SSH_KEY: <private_ssh_key>
+   DISCORD_TOKEN: <production_token>
+   DISCORD_CLIENT_ID: <client_id>
+   # ... other secrets
+   ```
+
+2. **Push to main branch** - Deployment happens automatically!
+
+   ```powershell
+   git push origin main
+   # GitHub Actions builds and deploys to VPS
+   ```
+
+3. **Monitor deployment**
+
+   Check GitHub Actions tab for deployment status and logs.
+
+**Complete Guide:** See [VPS Shared Integration Guide](docs/VPS_SHARED_INTEGRATION_GUIDE.md)
+
+**Benefits:**
+- 💰 Lower resource usage (shared PostgreSQL/Redis)
+- 🔐 Enhanced security (databases not publicly exposed)
+- 📈 Easier scaling (centralized infrastructure)
+- 🔄 Automatic backups (daily at 3AM)
+- 🚀 Zero-downtime deployments
+
+---
 
 ### Railway Deployment
 
