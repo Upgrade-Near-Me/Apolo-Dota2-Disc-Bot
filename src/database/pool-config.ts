@@ -30,7 +30,7 @@ export interface PoolOptimizationConfig {
 /**
  * Environment-specific pool configurations
  */
-export const poolConfig: Record<'development' | 'production' | 'staging', PoolOptimizationConfig> = {
+export const poolConfig: Record<'development' | 'production' | 'staging' | 'test', PoolOptimizationConfig> = {
   /**
    * Development: Lower resource usage, fast feedback
    */
