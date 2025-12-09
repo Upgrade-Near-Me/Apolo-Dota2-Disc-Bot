@@ -184,22 +184,29 @@ const migrations: string[] = [
 
 async function runMigrations(): Promise<void> {
   console.log('🔄 Running database migrations...');
+  console.log(`   Environment: ${process.env.NODE_ENV || 'production'}`);
+  console.log(`   Database URL: ${process.env.DATABASE_URL?.replace(/:[^:@]+@/, ':****@') || 'not set'}`);
   
   try {
     for (let i = 0; i < migrations.length; i++) {
-      console.log(`Running migration ${i + 1}/${migrations.length}...`);
+      console.log(`\n📝 Running migration ${i + 1}/${migrations.length}...`);
       await pool.query(migrations[i]!);
       console.log(`✅ Migration ${i + 1} completed`);
     }
     
-    console.log('✅ All migrations completed successfully!');
+    console.log('\n✅ All migrations completed successfully!');
   } catch (error) {
-    console.error('❌ Migration failed:', error);
+    console.error('\n❌ Migration failed:', error);
+    console.error('Stack trace:', (error as Error).stack);
     throw error;
   } finally {
+    console.log(`\n🔧 Cleanup: NODE_ENV=${process.env.NODE_ENV}, will ${process.env.NODE_ENV === 'test' ? 'NOT' : ''} close pool`);
     // Only close pool in production/staging, keep it open for tests
     if (process.env.NODE_ENV !== 'test') {
       await pool.end();
+      console.log('✅ Pool closed');
+    } else {
+      console.log('✅ Pool kept open for tests');
     }
   }
 }
