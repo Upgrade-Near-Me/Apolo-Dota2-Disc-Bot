@@ -41,7 +41,6 @@ let buttonHandler: any;
 let draftSimulator: any;
 let teamAnalyzer: any;
 let skillBuilder: any;
-let rankTracker: any;
 let initialized = false;
 
 // Dynamic imports
@@ -55,7 +54,6 @@ async function initializeDependencies() {
   draftSimulator = await import('../services/draftSimulatorService.js');
   teamAnalyzer = await import('../services/teamAnalyzerService.js');
   skillBuilder = await import('../services/skillBuildOptimizerService.js');
-  rankTracker = await import('../services/rankTrackerService.js');
   
   initialized = true;
 }

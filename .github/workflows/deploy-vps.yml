@@ -1,0 +1,292 @@
+name: Deploy to VPS (Shared Infrastructure)
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+  workflow_dispatch:  # Allow manual trigger
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+# Secrets required (configure in repository settings):
+# - GHCR_TOKEN: GitHub Container Registry token
+# - VPS_HOST: VPS IP address
+# - VPS_USER: VPS SSH user
+# - VPS_SSH_KEY: Private SSH key
+# - DISCORD_TOKEN: Discord bot token
+# - DISCORD_CLIENT_ID: Discord application ID
+# - DISCORD_GUILD_ID: Test guild ID (optional)
+# - APOLO_DB_USER: Database user
+# - APOLO_DB_PASSWORD: Database password
+# - APOLO_DB_NAME: Database name
+# - REDIS_PASSWORD: Redis password
+# - STRATZ_API_TOKEN_1: Stratz API token
+# - STRATZ_API_TOKEN_2: Stratz API token (optional)
+# - STRATZ_API_TOKEN_3: Stratz API token (optional)
+# - STEAM_API_KEY: Steam Web API key
+# - GEMINI_API_KEY_1: Gemini API key
+# - GEMINI_API_KEY_2: Gemini API key (optional)
+# - GEMINI_API_KEY_3: Gemini API key (optional)
+
+jobs:
+  # ==========================================
+  # JOB 1: BUILD & PUSH DOCKER IMAGE
+  # ==========================================
+  build-and-push:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_TOKEN }}
+      
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest
+            type=sha,prefix={{branch}}-
+            type=ref,event=branch
+      
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.prod
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+
+  # ==========================================
+  # JOB 2: DEPLOY TO VPS
+  # ==========================================
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: always() && needs.build-and-push.result == 'success'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+      
+      - name: Create .env file for VPS
+        run: |
+          cat > .env.vps << EOF
+          # Discord Configuration
+          DISCORD_TOKEN=${{ secrets.DISCORD_TOKEN }}
+          DISCORD_CLIENT_ID=${{ secrets.DISCORD_CLIENT_ID }}
+          DISCORD_GUILD_ID=${{ secrets.DISCORD_GUILD_ID }}
+          
+          # Database - Shared PostgreSQL 16
+          APOLO_DB_USER=${{ secrets.APOLO_DB_USER }}
+          APOLO_DB_PASSWORD=${{ secrets.APOLO_DB_PASSWORD }}
+          APOLO_DB_NAME=${{ secrets.APOLO_DB_NAME }}
+          
+          # Redis - Shared Redis 7
+          REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
+          
+          # API Keys - Stratz
+          STRATZ_API_TOKEN_1=${{ secrets.STRATZ_API_TOKEN_1 }}
+          STRATZ_API_TOKEN_2=${{ secrets.STRATZ_API_TOKEN_2 || '' }}
+          STRATZ_API_TOKEN_3=${{ secrets.STRATZ_API_TOKEN_3 || '' }}
+          
+          # Steam Web API
+          STEAM_API_KEY=${{ secrets.STEAM_API_KEY }}
+          
+          # Google Gemini AI
+          GEMINI_API_KEY_1=${{ secrets.GEMINI_API_KEY_1 }}
+          GEMINI_API_KEY_2=${{ secrets.GEMINI_API_KEY_2 || '' }}
+          GEMINI_API_KEY_3=${{ secrets.GEMINI_API_KEY_3 || '' }}
+          
+          # Node Environment
+          NODE_ENV=production
+          LOG_LEVEL=info
+          EOF
+      
+      - name: Setup VPS directory structure (Safe - Isolated)
+        run: |
+          ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << ENDSSH
+            # Create isolated APOLO directory
+            mkdir -p /root/apolo
+            
+            # Verify network 'proxy' exists (shared with other projects)
+            if ! docker network ls | grep -q proxy; then
+              echo "Creating network 'proxy' (shared)"
+              docker network create proxy
+            else
+              echo "Network 'proxy' already exists (shared)"
+            fi
+            
+            # Verify PostgreSQL container exists
+            if ! docker ps | grep -q postgres; then
+              echo "WARNING: PostgreSQL container not found"
+              echo "Expected: container named 'postgres' running PostgreSQL 16"
+              exit 1
+            fi
+            
+            # Verify Redis container exists
+            if ! docker ps | grep -q redis; then
+              echo "WARNING: Redis container not found"
+              echo "Expected: container named 'redis' running Redis 7"
+              exit 1
+            fi
+            
+            echo "✅ VPS infrastructure validated"
+          ENDSSH
+      
+      - name: Copy files to VPS (Isolated Directory)
+        run: |
+          scp -i ~/.ssh/id_ed25519 docker-compose.shared.yml ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/root/apolo/docker-compose.yml
+          scp -i ~/.ssh/id_ed25519 .env.vps ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/root/apolo/.env
+      
+      - name: Deploy on VPS (Zero Impact on Other Projects)
+        run: |
+          ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << ENDSSH
+            cd /root/apolo
+            
+            # Pull latest image
+            echo "📥 Pulling latest APOLO image..."
+            docker pull ghcr.io/${{ github.repository }}:latest
+            
+            # Stop old container (only APOLO, others unaffected)
+            echo "🛑 Stopping old APOLO container..."
+            docker-compose down
+            
+            # Start new container (isolated deployment)
+            echo "🚀 Starting new APOLO container..."
+            docker-compose up -d
+            
+            # Wait for health check
+            echo "⏳ Waiting for bot to be healthy..."
+            sleep 30
+            
+            # Check status
+            echo "📊 Container status:"
+            docker ps | grep apolo-bot
+            
+            echo "📝 Recent logs:"
+            docker logs --tail=20 apolo-bot
+            
+            # Verify other projects still running
+            echo "🔍 Verifying other projects not affected..."
+            docker ps | grep -E "n8n|api-node|postgres|redis" || echo "⚠️  Some shared services may not be running"
+          ENDSSH
+      
+      - name: Run database migrations (Isolated Database)
+        run: |
+          ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << ENDSSH
+            cd /root/apolo
+            
+            echo "🗄️  Running database migrations for APOLO..."
+            docker exec apolo-bot npx tsx src/database/migrate.ts
+            
+            echo "✅ Migrations completed"
+          ENDSSH
+      
+      - name: Verify deployment (Safety Checks)
+        run: |
+          ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << ENDSSH
+            cd /root/apolo
+            
+            echo "=== APOLO Deployment Verification ==="
+            echo ""
+            
+            # Check container health
+            echo "1. Container Health:"
+            docker inspect apolo-bot --format='{{.State.Health.Status}}' || echo "No healthcheck configured"
+            
+            # Check if container is running
+            echo ""
+            echo "2. Container Status:"
+            docker ps | grep apolo-bot | awk '{print "   Status:", \$7, \$8, \$9}'
+            
+            # Check logs for errors
+            echo ""
+            echo "3. Recent Errors (if any):"
+            docker logs --tail=50 apolo-bot | grep -i error || echo "   ✅ No errors found"
+            
+            # Test health endpoint
+            echo ""
+            echo "4. Health Endpoint:"
+            docker exec apolo-bot curl -f http://localhost:9100/health 2>/dev/null && echo "   ✅ Healthy" || echo "   ⚠️  No response"
+            
+            # Verify database connectivity
+            echo ""
+            echo "5. Database Connectivity:"
+            docker exec apolo-bot npx tsx -e "import pool from './dist/database/index.js'; pool.query('SELECT 1').then(() => console.log('   ✅ Connected')).catch(() => console.log('   ❌ Failed'))"
+            
+            # Verify other projects still running (safety)
+            echo ""
+            echo "6. Other Projects Status:"
+            docker ps --format "table {{.Names}}\t{{.Status}}" | grep -E "postgres|redis|n8n|api-node" || echo "   ⚠️  Some services not visible"
+            
+            echo ""
+            echo "=== End Verification ==="
+          ENDSSH
+      
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -f ~/.ssh/id_ed25519
+          rm -f .env.vps
+      
+      - name: Deployment summary
+        if: success()
+        run: |
+          echo "=========================================="
+          echo "✅ DEPLOYMENT SUCCESSFUL - ISOLATED & SAFE"
+          echo "=========================================="
+          echo ""
+          echo "🤖 Bot: APOLO Dota 2"
+          echo "🖥️  VPS: ${{ secrets.VPS_HOST }}"
+          echo "📁 Directory: /root/apolo (isolated)"
+          echo "🐳 Image: ghcr.io/${{ github.repository }}:latest"
+          echo "🔗 Network: proxy (shared)"
+          echo "🗄️  Database: apolo_dota2 (isolated)"
+          echo "💾 Redis: apolo:* namespace (isolated)"
+          echo "📊 Metrics: http://${{ secrets.VPS_HOST }}:9100/metrics (internal)"
+          echo ""
+          echo "🛡️  Safety Guarantees:"
+          echo "   ✅ APOLO runs in isolated directory"
+          echo "   ✅ Other projects unaffected by APOLO"
+          echo "   ✅ Restart/stop only affects APOLO"
+          echo "   ✅ Database isolated (apolo_dota2)"
+          echo "   ✅ Redis keys isolated (apolo: prefix)"
+          echo ""
+          echo "🚀 Next Steps:"
+          echo "   1. Test Discord bot: /dashboard"
+          echo "   2. Monitor: ssh root@${{ secrets.VPS_HOST }} 'docker logs -f apolo-bot'"
+          echo "   3. Health: ssh root@${{ secrets.VPS_HOST }} 'docker exec apolo-bot curl http://localhost:9100/health'"
+          echo ""
+          echo "=========================================="

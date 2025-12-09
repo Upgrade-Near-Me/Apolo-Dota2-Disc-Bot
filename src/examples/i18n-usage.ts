@@ -196,6 +196,7 @@ async function handleLanguageChange(interaction: ChatInputCommandInteraction, ne
 
   try {
     // Import pool dynamically (since it's a .js file)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { default: pool } = await import('../database/index.js') as { default: any };
     
     // Update database

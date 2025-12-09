@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * ============================================
  * APOLO DASHBOARD - V2.0 SMART SYNC
@@ -33,6 +32,7 @@ import {
   VoiceChannel,
   OverwriteResolvable,
   Message,
+  Guild,
 } from 'discord.js';
 
 // ============================================
@@ -43,12 +43,12 @@ import {
  * Find or create a category channel (idempotent)
  */
 async function syncCategory(
-  guild: any,
+  guild: Guild,
   categoryName: string,
   position: number
 ): Promise<CategoryChannel> {
   let category = guild.channels.cache.find(
-    (ch: any) => ch.name === categoryName && ch.type === ChannelType.GuildCategory
+    (ch) => ch.name === categoryName && ch.type === ChannelType.GuildCategory
   ) as CategoryChannel | undefined;
 
   if (category) {
@@ -70,14 +70,14 @@ async function syncCategory(
  * Sync a text channel (create or update permissions/topic)
  */
 async function syncTextChannel(
-  guild: any,
+  guild: Guild,
   channelName: string,
   parentId: string,
   permissions: OverwriteResolvable[],
   topic?: string
 ): Promise<TextChannel> {
   let channel = guild.channels.cache.find(
-    (ch: any) => ch.name === channelName && ch.type === ChannelType.GuildText
+    (ch) => ch.name === channelName && ch.type === ChannelType.GuildText
   ) as TextChannel | undefined;
 
   if (channel) {

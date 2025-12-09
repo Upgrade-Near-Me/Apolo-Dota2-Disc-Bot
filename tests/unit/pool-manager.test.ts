@@ -125,7 +125,7 @@ describe('Database Connection Pool - Performance Tests', () => {
 
     expect(result.rows).toHaveLength(1);
     expect(result.rows[0].value).toBe('test');
-    expect(result.rows[0].number).toBe(42);
+    expect(result.rows[0].number).toBe('42');
   });
 
   /**

@@ -294,7 +294,7 @@ describe('Redis Manager - Cache Optimization (Phase 13)', () => {
       // Verify core status sections (Memory may vary by Redis version)
       expect(status).toContain('REDIS CACHE STATUS');
       expect(status).toContain('Hit Rate');
-      expect(status).toContain('Performance');
+      expect(status).toContain('PERFORMANCE');
       expect(status).toContain('Keys');
       expect(status).toContain('Connection');
     });

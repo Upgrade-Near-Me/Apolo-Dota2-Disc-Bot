@@ -108,31 +108,6 @@ function formatNumber(num: number): string {
 }
 
 /**
- * Get rank badge with emoji and bold text
- */
-function getRankBadge(rank: string): string {
-  const ranks: Record<string, string> = {
-    'Herald': '🛡️ **Herald**',
-    'Guardian': '🗡️ **Guardian**',
-    'Crusader': '⚔️ **Crusader**',
-    'Archon': '🏹 **Archon**',
-    'Legend': '🔱 **Legend**',
-    'Ancient': '👑 **Ancient**',
-    'Divine': '💎 **Divine**',
-    'Immortal': '🏆 **Immortal**'
-  };
-  return ranks[rank] || `⭐ **${rank}**`;
-}
-
-/**
- * Get hero medal emoji (top 5)
- */
-function getHeroMedal(index: number): string {
-  const medals = ['🥇', '🥈', '🥉', '4⃣', '5⃣'];
-  return medals[index] || '▪️';
-}
-
-/**
  * Create mini progress bar for hero stats (5 blocks)
  */
 function createMiniBar(winrate: number): string {
@@ -153,24 +128,10 @@ function createMiniBar(winrate: number): string {
 }
 
 /**
- * Format stat with icon and color
- */
-function formatStat(label: string, value: string | number, emoji: string): string {
-  return `${emoji} **${label}**: ${value}`;
-}
-
-/**
  * Create section header
  */
 function sectionHeader(title: string): string {
   return `## ${title}`;
-}
-
-/**
- * Create inline stat card (3 columns)
- */
-function inlineStatCard(items: Array<{ label: string; value: string | number; emoji: string }>): string {
-  return items.map(item => `${item.emoji} **${item.label}**\n${item.value}`).join('\n\n');
 }
 
 /**
