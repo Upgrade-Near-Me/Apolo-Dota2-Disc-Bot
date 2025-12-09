@@ -1,4 +1,13 @@
-import pool from './index.js';
+import pkg from 'pg';
+const { Pool } = pkg;
+
+// Create a simple pool ONLY for migrations (no logger dependencies)
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  max: 1, // Only one connection needed for migrations
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000,
+});
 
 const migrations: string[] = [
   // Migration 1: Create users table
