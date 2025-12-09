@@ -197,7 +197,10 @@ async function runMigrations(): Promise<void> {
     console.error('❌ Migration failed:', error);
     throw error;
   } finally {
-    await pool.end();
+    // Only close pool in production/staging, keep it open for tests
+    if (process.env.NODE_ENV !== 'test') {
+      await pool.end();
+    }
   }
 }
 
