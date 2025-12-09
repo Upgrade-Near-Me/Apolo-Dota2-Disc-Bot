@@ -26,7 +26,8 @@
     "health:check:export": "tsx scripts/health-check.ts --export json",
     "report": "tsx scripts/report.ts",
     "report:quick": "tsx scripts/report.ts --quick",
-    "report:export": "tsx scripts/report.ts --export json && tsx scripts/report.ts --export html"
+    "report:export": "tsx scripts/report.ts --export json && tsx scripts/report.ts --export html",
+    "validate:secrets": "tsx scripts/validate-secrets.ts"
   },
   "keywords": [
     "discord",
