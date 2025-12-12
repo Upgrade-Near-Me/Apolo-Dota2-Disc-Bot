@@ -44,9 +44,13 @@ services:
       - DISCORD_GUILD_ID=${DISCORD_GUILD_ID}
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/apolo_dota2
       - REDIS_URL=redis://redis:6379
-      - STRATZ_API_TOKEN=${STRATZ_API_TOKEN}
+      - STRATZ_API_TOKEN_1=${STRATZ_API_TOKEN_1}
+      - STRATZ_API_TOKEN_2=${STRATZ_API_TOKEN_2:-}
+      - STRATZ_API_TOKEN_3=${STRATZ_API_TOKEN_3:-}
       - STEAM_API_KEY=${STEAM_API_KEY}
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_API_KEY_1=${GEMINI_API_KEY_1}
+      - GEMINI_API_KEY_2=${GEMINI_API_KEY_2:-}
+      - GEMINI_API_KEY_3=${GEMINI_API_KEY_3:-}
       - NODE_ENV=development
       - METRICS_PORT=9090
     ports:

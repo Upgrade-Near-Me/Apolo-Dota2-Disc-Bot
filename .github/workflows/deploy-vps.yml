@@ -138,7 +138,7 @@ jobs:
         run: |
           ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << ENDSSH
             # Create isolated APOLO directory
-            mkdir -p /root/apolo
+            mkdir -p /opt/apolo-bot
             
             # Verify network 'proxy' exists (shared with other projects)
             if ! docker network ls | grep -q proxy; then
@@ -162,18 +162,24 @@ jobs:
               exit 1
             fi
             
+            # Create APOLO database if doesn't exist
+            echo "Creating database apolo_dota2 (if not exists)..."
+            docker exec postgres psql -U postgres -tc "SELECT 1 FROM pg_database WHERE datname = 'apolo_dota2'" | grep -q 1 || \
+              docker exec postgres psql -U postgres -c "CREATE DATABASE apolo_dota2;"
+            echo "✅ Database apolo_dota2 ready"
+            
             echo "✅ VPS infrastructure validated"
           ENDSSH
       
       - name: Copy files to VPS (Isolated Directory)
         run: |
-          scp -i ~/.ssh/id_ed25519 docker-compose.shared.yml ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/root/apolo/docker-compose.yml
-          scp -i ~/.ssh/id_ed25519 .env.vps ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/root/apolo/.env
+          scp -i ~/.ssh/id_ed25519 docker-compose.shared.yml ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/apolo-bot/docker-compose.yml
+          scp -i ~/.ssh/id_ed25519 .env.vps ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/apolo-bot/.env
       
       - name: Deploy on VPS (Zero Impact on Other Projects)
         run: |
           ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << ENDSSH
-            cd /root/apolo
+            cd /opt/apolo-bot
             
             # Pull latest image
             echo "📥 Pulling latest APOLO image..."
@@ -181,11 +187,11 @@ jobs:
             
             # Stop old container (only APOLO, others unaffected)
             echo "🛑 Stopping old APOLO container..."
-            docker-compose down
+            docker compose down
             
             # Start new container (isolated deployment)
             echo "🚀 Starting new APOLO container..."
-            docker-compose up -d
+            docker compose up -d
             
             # Wait for health check
             echo "⏳ Waiting for bot to be healthy..."
@@ -206,18 +212,21 @@ jobs:
       - name: Run database migrations (Isolated Database)
         run: |
           ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << ENDSSH
-            cd /root/apolo
+            cd /opt/apolo-bot
             
             echo "🗄️  Running database migrations for APOLO..."
             docker exec apolo-bot npx tsx src/database/migrate.ts
             
-            echo "✅ Migrations completed"
+            echo "📡 Deploying Discord commands..."
+            docker exec apolo-bot npx tsx src/deploy-commands.ts
+            
+            echo "✅ Migrations and commands deployed"
           ENDSSH
       
       - name: Verify deployment (Safety Checks)
         run: |
           ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << ENDSSH
-            cd /root/apolo
+            cd /opt/apolo-bot
             
             echo "=== APOLO Deployment Verification ==="
             echo ""
@@ -270,7 +279,7 @@ jobs:
           echo ""
           echo "🤖 Bot: APOLO Dota 2"
           echo "🖥️  VPS: ${{ secrets.VPS_HOST }}"
-          echo "📁 Directory: /root/apolo (isolated)"
+          echo "📁 Directory: /opt/apolo-bot (isolated)"
           echo "🐳 Image: ghcr.io/${{ github.repository }}:latest"
           echo "🔗 Network: proxy (shared)"
           echo "🗄️  Database: apolo_dota2 (isolated)"

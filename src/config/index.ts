@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import logger from '../utils/logger.js';
+import { getApiKey } from '../utils/apiKeyPool.js';
 
 interface Config {
   discord: {
@@ -15,7 +16,7 @@ interface Config {
   };
   api: {
     stratz: {
-      token: string;
+      token: string | null;
       endpoint: string;
     };
     steam: {
@@ -23,7 +24,7 @@ interface Config {
       endpoint: string;
     };
     gemini: {
-      apiKey: string;
+      apiKey: string | null;
       model: string;
       maxTokens: number;
       temperature: number;
@@ -46,7 +47,7 @@ const config: Config = {
   },
   api: {
     stratz: {
-      token: process.env.STRATZ_API_TOKEN as string,
+      token: getApiKey('stratz') || process.env.STRATZ_API_TOKEN_1 || '',
       endpoint: 'https://api.stratz.com/graphql',
     },
     steam: {
@@ -54,7 +55,7 @@ const config: Config = {
       endpoint: 'https://api.steampowered.com',
     },
     gemini: {
-      apiKey: process.env.GEMINI_API_KEY as string,
+      apiKey: getApiKey('gemini') || process.env.GEMINI_API_KEY_1 || '',
       model: 'gemini-2.0-flash-exp',
       maxTokens: 1000,
       temperature: 0.7,
