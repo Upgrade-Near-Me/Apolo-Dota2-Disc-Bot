@@ -1,394 +1,92 @@
-name: Deploy to VPS (Shared Infrastructure)
+name: Deploy to VPS (Shared Infra)
 
 on:
   push:
-    branches:
-      - main
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
+    branches: [main]
   workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
-
-# Secrets required (configure in repository settings):
-# - GHCR_TOKEN: GitHub Container Registry token
-# - VPS_HOST: VPS IP address
-# - VPS_USER: VPS SSH user
-# - VPS_SSH_KEY: Private SSH key
-# - DISCORD_TOKEN: Discord bot token
-# - DISCORD_CLIENT_ID: Discord application ID
-# - DISCORD_GUILD_ID: Test guild ID (optional)
-# - APOLO_DB_USER: Database user
-# - APOLO_DB_PASSWORD: Database password
-# - APOLO_DB_NAME: Database name
-# - REDIS_PASSWORD: Redis password
-# - STRATZ_API_TOKEN_1: Stratz API token
-# - STRATZ_API_TOKEN_2: Stratz API token (optional)
-# - STRATZ_API_TOKEN_3: Stratz API token (optional)
-# - STEAM_API_KEY: Steam Web API key
-# - GEMINI_API_KEY_1: Gemini API key
-# - GEMINI_API_KEY_2: Gemini API key (optional)
-# - GEMINI_API_KEY_3: Gemini API key (optional)
+  IMAGE_NAME: ghcr.io/${{ github.repository }}
 
 jobs:
-  # ==========================================
-  # JOB 1: BUILD & PUSH DOCKER IMAGE
-  # ==========================================
   build-and-push:
-    name: Build Docker Image
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      
-      - name: Log in to GitHub Container Registry
+
+      - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
-          password: ${{ secrets.GHCR_TOKEN }}
-      
-      - name: Extract metadata (tags, labels)
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=raw,value=latest
-            type=sha,prefix={{branch}}-
-            type=ref,event=branch
-      
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile.prod
+          file: Dockerfile
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ env.IMAGE_NAME }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          platforms: linux/amd64
 
-  # ==========================================
-  # JOB 2: DEPLOY TO VPS
-  # ==========================================
-  deploy:
-    name: Deploy to VPS
-    runs-on: ubuntu-latest
+  deploy-to-vps:
     needs: build-and-push
-    
+    runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
-      - name: Prepare VPS environment and copy files
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          script_stop: true
-          script: |
-            export PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
-            export NVM_DIR="$HOME/.nvm"
-            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-            
-            mkdir -p /opt/apolo-bot
-            cd /opt/apolo-bot
-            
-            # Create .env from environment
-            cat > .env << 'ENV_EOF'
-            # Discord Configuration
-            DISCORD_TOKEN=${{ secrets.DISCORD_TOKEN }}
-            DISCORD_CLIENT_ID=${{ secrets.DISCORD_CLIENT_ID }}
-            DISCORD_GUILD_ID=${{ secrets.DISCORD_GUILD_ID }}
-            
-            # Database Configuration
-            APOLO_DB_USER=${{ secrets.APOLO_DB_USER }}
-            APOLO_DB_PASSWORD=${{ secrets.APOLO_DB_PASSWORD }}
-            APOLO_DB_NAME=${{ secrets.APOLO_DB_NAME }}
-            DATABASE_URL=postgresql://${{ secrets.APOLO_DB_USER }}:${{ secrets.APOLO_DB_PASSWORD }}@postgres:5432/${{ secrets.APOLO_DB_NAME }}
-            
-            # Redis Configuration
-            REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
-            REDIS_URL=redis://:${{ secrets.REDIS_PASSWORD }}@redis:6379/0
-            REDIS_PREFIX=apolo
-            
-            # API Keys
-            STRATZ_API_TOKEN_1=${{ secrets.STRATZ_API_TOKEN_1 }}
-            STEAM_API_KEY=${{ secrets.STEAM_API_KEY }}
-            GEMINI_API_KEY_1=${{ secrets.GEMINI_API_KEY_1 }}
-            
-            # Environment
-            NODE_ENV=production
-            LOG_LEVEL=info
-            METRICS_PORT=9100
-            ENV_EOF
-      
-      - name: Copy docker-compose to VPS
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          source: "docker-compose.shared.yml"
-          target: "/opt/apolo-bot/"
-          strip_components: 0
-      
-      - name: Rename docker-compose file
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          script_stop: true
-          script: |
-            cd /opt/apolo-bot
-            mv docker-compose.shared.yml docker-compose.yml
-            
-            # Verify proxy network exists (should already exist from VPS infrastructure)
-            if ! docker network ls | grep -q proxy; then
-              echo "⚠️ WARNING: Network 'proxy' not found - will be created"
-              docker network create proxy
-            else
-              echo "✅ Network 'proxy' confirmed (shared VPS infrastructure)"
-            fi
-            
-            echo "✅ VPS environment prepared (using SHARED PostgreSQL 16 + Redis 7)"
-      
-      - name: Deploy APOLO bot (shared infrastructure mode)
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          script_stop: false  # ← NÃO PARA EM ERRO - queremos ver TUDO
-          command_timeout: 10m
-          script: |
-            cd /opt/apolo-bot
-            
-            echo "=========================================="
-            echo "=== DIAGNÓSTICO COMPLETO - DEBUG MODE ==="
-            echo "=========================================="
-            echo ""
-            
-            # ========================================
-            # 1. RECURSOS DA VPS ANTES DO DEPLOY
-            # ========================================
-            echo "1️⃣ Recursos do Sistema ANTES:"
-            echo ""
-            free -h
-            echo ""
-            df -h /
-            echo ""
-            docker system df
-            echo ""
-            
-            # ========================================
-            # 2. LIMPAR CONTAINERS ANTIGOS
-            # ========================================
-            echo "2️⃣ Limpando containers antigos..."
-            docker compose down || true
-            docker ps -a | grep apolo || echo "Nenhum container APOLO antigo"
-            echo ""
-            
-            # ========================================
-            # 3. VERIFICAR ARQUIVOS DE CONFIG
-            # ========================================
-            echo "3️⃣ Verificando arquivos de configuração:"
-            echo ""
-            echo "=== .env existe? ==="
-            ls -lah .env || echo "❌ .env NÃO ENCONTRADO"
-            echo ""
-            echo "=== docker-compose.yml existe? ==="
-            ls -lah docker-compose.yml || echo "❌ docker-compose.yml NÃO ENCONTRADO"
-            echo ""
-            echo "=== Primeiras 10 linhas do .env (sem senhas): ==="
-            head -n 10 .env | sed 's/=.*/=***/' || echo "Não foi possível ler .env"
-            echo ""
-            
-            # ========================================
-            # 4. PULL DA IMAGEM
-            # ========================================
-            echo "4️⃣ Fazendo pull da imagem Docker..."
-            docker pull ghcr.io/${{ github.repository }}:latest || echo "⚠️ Pull falhou mas continuando..."
-            echo ""
-            
-            # ========================================
-            # 5. TENTAR SUBIR OS CONTAINERS (NÃO PARA EM ERRO)
-            # ========================================
-            echo "5️⃣ Tentando subir containers com docker-compose..."
-            echo ""
-            docker compose up -d || echo "⚠️ docker-compose up FALHOU - mas vamos ver os logs..."
-            echo ""
-            
-            # ========================================
-            # 6. ESTADO DE TODOS OS CONTAINERS
-            # ========================================
-            echo "6️⃣ Estado de TODOS os containers APOLO:"
-            echo ""
-            docker ps -a --filter "name=apolo" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
-            echo ""
-            
-            # ========================================
-            # 7. LOGS COMPLETOS DE CADA CONTAINER
-            # ========================================
-            echo "7️⃣ LOGS COMPLETOS de cada container:"
-            echo ""
-            
-            echo "=== LOGS: apolo-bot (últimas 100 linhas) ==="
-            docker logs apolo-bot --tail=100 2>&1 || echo "Container apolo-bot não existe ou não tem logs"
-            echo ""
-            echo ""
-            
-            echo "=== LOGS: apolo-postgres (últimas 50 linhas) ==="
-            docker logs apolo-postgres --tail=50 2>&1 || echo "Container apolo-postgres não existe ou não tem logs"
-            echo ""
-            echo ""
-            
-            echo "=== LOGS: apolo-redis (últimas 30 linhas) ==="
-            docker logs apolo-redis --tail=30 2>&1 || echo "Container apolo-redis não existe ou não tem logs"
-            echo ""
-            echo ""
-            
-            # ========================================
-            # 8. DOCKER INSPECT (detalhes técnicos)
-            # ========================================
-            echo "8️⃣ Docker Inspect de cada container:"
-            echo ""
-            
-            echo "=== APOLO-BOT Inspect ==="
-            docker inspect apolo-bot --format='Status: {{.State.Status}} | Running: {{.State.Running}} | Exit Code: {{.State.ExitCode}} | Error: {{.State.Error}}' 2>&1 || echo "Container apolo-bot não existe"
-            echo ""
-            
-            echo "=== APOLO-POSTGRES Inspect ==="
-            docker inspect apolo-postgres --format='Status: {{.State.Status}} | Running: {{.State.Running}} | Exit Code: {{.State.ExitCode}}' 2>&1 || echo "Container apolo-postgres não existe"
-            echo ""
-            
-            echo "=== APOLO-REDIS Inspect ==="
-            docker inspect apolo-redis --format='Status: {{.State.Status}} | Running: {{.State.Running}} | Exit Code: {{.State.ExitCode}}' 2>&1 || echo "Container apolo-redis não existe"
-            echo ""
-            
-            # ========================================
-            # 9. VERIFICAR NETWORKS
-            # ========================================
-            echo "9️⃣ Redes Docker:"
-            echo ""
-            docker network ls | grep -E "proxy|apolo" || echo "Nenhuma rede APOLO encontrada"
-            echo ""
-            
-            # ========================================
-            # 10. VERIFICAR VOLUMES
-            # ========================================
-            echo "🔟 Volumes Docker:"
-            echo ""
-            docker volume ls | grep apolo || echo "Nenhum volume APOLO encontrado"
-            echo ""
-            
-            # ========================================
-            # 11. RECURSOS DA VPS DEPOIS DO DEPLOY
-            # ========================================
-            echo "1️⃣1️⃣ Recursos do Sistema DEPOIS:"
-            echo ""
-            free -h
-            echo ""
-            df -h /
-            echo ""
-            docker system df
-            echo ""
-            
-            # ========================================
-            # 12. TESTE DE CONECTIVIDADE (se containers rodando)
-            # ========================================
-            echo "1️⃣2️⃣ Testes de conectividade:"
-            echo ""
-            
-            if docker ps | grep -q apolo-postgres; then
-              echo "=== Testando conexão PostgreSQL ==="
-              docker exec apolo-postgres pg_isready -U ${{ secrets.APOLO_DB_USER }} || echo "PostgreSQL não está respondendo"
-              echo ""
-            fi
-            
-            if docker ps | grep -q apolo-redis; then
-              echo "=== Testando conexão Redis ==="
-              docker exec apolo-redis redis-cli -a ${{ secrets.REDIS_PASSWORD }} ping || echo "Redis não está respondendo"
-              echo ""
-            fi
-            
-            if docker ps | grep -q apolo-bot; then
-              echo "=== Testando bot (curl health) ==="
-              docker exec apolo-bot curl -f http://localhost:9100/health 2>/dev/null && echo "✅ Health OK" || echo "⚠️ Health endpoint não responde"
-              echo ""
-            fi
-            
-            # ========================================
-            # 13. RESUMO FINAL
-            # ========================================
-            echo "=========================================="
-            echo "=== RESUMO DO DIAGNÓSTICO ==="
-            echo "=========================================="
-            echo ""
-            
-            echo "Containers rodando (Up):"
-            docker ps --filter "name=apolo" --format "{{.Names}}" || echo "Nenhum"
-            echo ""
-            
-            echo "Containers parados (Exited):"
-            docker ps -a --filter "name=apolo" --filter "status=exited" --format "{{.Names}} (Exit Code: {{.Status}})" || echo "Nenhum"
-            echo ""
-            
-            echo "=========================================="
-            echo "FIM DO DIAGNÓSTICO"
-            echo "=========================================="
-      
-      # ========================================
-      # STEPS DESABILITADOS DURANTE DEBUG
-      # ========================================
-      # Descomente quando o diagnóstico mostrar que os containers estão rodando
-      
-      # - name: Run database migrations
-      #   if: false  # Desabilitado para debug
-      #   uses: appleboy/ssh-action@v1.0.3
-      #   with:
-      #     host: ${{ secrets.VPS_HOST }}
-      #     username: ${{ secrets.VPS_USER }}
-      #     key: ${{ secrets.VPS_SSH_KEY }}
-      #     script_stop: true
-      #     script: |
-      #       cd /opt/apolo-bot
-      #       docker exec apolo-bot npx tsx src/database/migrate.ts
-      #       docker exec apolo-bot npx tsx src/deploy-commands.ts
-      
-      # - name: Verify deployment
-      #   if: false  # Desabilitado para debug
-      
-      - name: Debug Summary
-        if: always()
+
+      - name: Create SSH key file
         run: |
-          echo "=========================================="
-          echo "🔍 DEBUG MODE - Workflow Complete"
-          echo "=========================================="
-          echo ""
-          echo "📋 Verifique o output do step anterior para:"
-          echo "   • Estado dos containers (Up/Exited)"
-          echo "   • Logs completos de cada container"
-          echo "   • Uso de recursos (RAM/Disco)"
-          echo "   • Mensagens de erro específicas"
-          echo ""
-          echo "🚨 Se containers estão em 'Exited':"
-          echo "   → Procure por 'Exit Code' nos logs"
-          echo "   → Verifique variáveis de ambiente"
-          echo "   → Cheque uso de memória (OOM?)"
-          echo ""
-          echo "=========================================="
+          echo "${{ secrets.VPS_SSH_KEY }}" > private_key
+          chmod 600 private_key
+
+      - name: Deploy to VPS
+        run: |
+          # 1. Copiar o docker-compose pronto para a VPS
+          scp -i private_key -o StrictHostKeyChecking=no \
+            docker-compose.shared.yml \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/apolo-bot/docker-compose.yml
+
+          # 2. Criar .env na VPS com os Secrets
+          ssh -i private_key -o StrictHostKeyChecking=no \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+            mkdir -p /opt/apolo-bot
+            cat > /opt/apolo-bot/.env << 'ENVFILE'
+          NODE_ENV=production
+          DISCORD_TOKEN=${{ secrets.DISCORD_TOKEN }}
+          DISCORD_CLIENT_ID=${{ secrets.DISCORD_CLIENT_ID }}
+          DISCORD_GUILD_ID=${{ secrets.DISCORD_GUILD_ID }}
+          DATABASE_URL=postgresql://${{ secrets.APOLO_DB_USER }}:${{ secrets.APOLO_DB_PASSWORD }}@postgres:5432/${{ secrets.APOLO_DB_NAME }}
+          REDIS_URL=redis://:${{ secrets.REDIS_PASSWORD }}@redis:6379/0
+          REDIS_PREFIX=${{ secrets.REDIS_PREFIX }}
+          STRATZ_API_TOKEN_1=${{ secrets.STRATZ_API_TOKEN_1 }}
+          STEAM_API_KEY=${{ secrets.STEAM_API_KEY }}
+          GEMINI_API_KEY_1=${{ secrets.GEMINI_API_KEY_1 }}
+          ENVFILE
+          EOF
+
+          # 3. Executar o Deploy
+          ssh -i private_key -o StrictHostKeyChecking=no \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+            cd /opt/apolo-bot
+            docker compose pull
+            docker compose up -d
+            echo "✅ Deploy concluído!"
+          EOF
+
+      - name: Cleanup
+        if: always()
+        run: rm -f private_key
