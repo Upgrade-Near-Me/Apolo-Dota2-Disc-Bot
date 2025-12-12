@@ -104,20 +104,26 @@ Each project has **its own PostgreSQL database**:
 
 ```sql
 -- PostgreSQL 16 (shared container)
-CREATE DATABASE apolo_dota2 OWNER apolo_user;
-CREATE USER apolo_user WITH PASSWORD 'secure_password';
-GRANT ALL PRIVILEGES ON DATABASE apolo_dota2 TO apolo_user;
+-- Production Configuration (ATUAL):
+CREATE DATABASE apolo_dota2;
+-- APOLO uses 'postgres' superuser with password: ZapclaudioVPS2024@Secure!
 
--- apolo_user has ZERO access to:
+-- Future Enhancement (Optional - Para maior isolamento):
+-- CREATE USER apolo_user WITH PASSWORD 'secure_password';
+-- GRANT ALL PRIVILEGES ON DATABASE apolo_dota2 TO apolo_user;
+
+-- apolo_dota2 database is isolated from:
 -- - n8n_db
 -- - api_node_db
 -- - discord_bot_db
 ```
 
 **Connection strings:**
-- APOLO: `postgresql://apolo_user:password@postgres:5432/apolo_dota2`
+- APOLO: `postgresql://postgres:ZapclaudioVPS2024@Secure!@postgres:5432/apolo_dota2`
 - n8n: `postgresql://n8n_user:password@postgres:5432/n8n_db`
 - api-node: `postgresql://api_user:password@postgres:5432/api_node_db`
+
+**⚠️ IMPORTANTE:** APOLO atualmente usa o superuser `postgres` por simplicidade. Para ambientes com múltiplos desenvolvedores, considere criar um usuário dedicado `apolo_user` com permissões limitadas.
 
 ### Redis Isolation
 
@@ -220,21 +226,27 @@ DISCORD_GUILD_ID: 9876543210987654321  # Optional: test server
 
 ```yaml
 # PostgreSQL 16 (shared)
-APOLO_DB_USER: apolo_user
-APOLO_DB_PASSWORD: your_secure_apolo_db_password_min_16_chars
-APOLO_DB_NAME: apolo_dota2
+# PRODUÇÃO ATUAL: Usando superuser postgres
+DB_USER: postgres
+DB_PASSWORD: ZapclaudioVPS2024@Secure!
+DB_NAME: apolo_dota2
 DB_HOST: postgres  # Container name in docker network
 DB_PORT: 5432
+DATABASE_URL: postgresql://postgres:ZapclaudioVPS2024%40Secure!@postgres:5432/apolo_dota2
+
+# NOTA: URL encoding necessário para caracteres especiais (@, !, #)
+# @ = %40  (exemplo: ZapclaudioVPS2024@Secure! → ZapclaudioVPS2024%40Secure!)
 ```
 
 #### Redis Configuration
 
 ```yaml
 # Redis 7 (shared)
-REDIS_PASSWORD: your_secure_redis_password
+REDIS_PASSWORD: RedisVPS2024@Secure!
 REDIS_HOST: redis  # Container name in docker network
 REDIS_PORT: 6379
 REDIS_PREFIX: apolo  # Namespace prefix
+REDIS_URL: redis://:RedisVPS2024@Secure!@redis:6379
 ```
 
 #### API Keys
@@ -312,21 +324,43 @@ latest: Pulling from upgrade-near-me/apolo-dota2-disc-bot
 
 **Detalhes completos:** Ver [VPS Docker Auth Guide](VPS_DOCKER_AUTH_GUIDE.md)
 
-### 3. Create APOLO Database
+### 3. Verify APOLO Database
+
+**NOTA:** O database `apolo_dota2` já foi criado e está operacional com 10 tabelas.
 
 ```bash
-# Connect to PostgreSQL container
+# Verificar se database existe
+docker exec -it postgres psql -U postgres -c "\l" | grep apolo_dota2
+
+# Listar tabelas (deve mostrar 10 tabelas)
+docker exec -it postgres psql -U postgres -d apolo_dota2 -c "\dt"
+
+# Tabelas esperadas:
+# - users
+# - guild_settings
+# - matches
+# - server_stats
+# - user_xp
+# - xp_events
+# - match_imp_scores
+# - match_awards
+# - user_socials
+# - lfg_queue
+```
+
+**Se precisar recriar (não recomendado se bot já está funcionando):**
+
+```bash
+# Conectar no PostgreSQL
 docker exec -it postgres psql -U postgres
 
-# Inside psql:
+# Dentro do psql:
 CREATE DATABASE apolo_dota2;
-CREATE USER apolo_user WITH PASSWORD 'your_secure_apolo_db_password_min_16_chars';
-GRANT ALL PRIVILEGES ON DATABASE apolo_dota2 TO apolo_user;
-
-# Verify
-\l  # List databases (should see apolo_dota2)
-\q  # Exit
+# Sair
+\q
 ```
+
+**⚠️ IMPORTANTE:** APOLO usa o usuário `postgres` (superuser). Para melhor isolamento em produção, considere criar um usuário dedicado `apolo_user` no futuro.
 
 ### 4. Update VPS Docker Compose
 

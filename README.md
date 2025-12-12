@@ -22,7 +22,18 @@
 
 **Version:** 2.2.0 (Production Ready)  
 **Release Date:** December 2025  
-**Status:** ✅ Ready for Public Launch
+**Status:** ✅ **DEPLOYED & OPERATIONAL** 🚀
+
+### 🎯 Production Deployment
+
+- 🟢 **VPS:** Live on zapclaudio.com (31.97.103.184)
+- 🟢 **Bot:** APOLO - Dota2#0567 ONLINE
+- 🟢 **Servers:** 2 active (PKT GAMERS 🇧🇷, DOTA NÚCLEO COMUNIDADE)
+- 🟢 **Database:** PostgreSQL 16 connected (10 tables)
+- 🟢 **Cache:** Redis 7 operational
+- 🟢 **Health:** All systems HEALTHY
+
+**[📊 View Deployment Status](docs/deployment/VPS_DEPLOYMENT_STATUS.md)** | **[🚀 Deployment Guide](docs/deployment/VPS_SHARED_INTEGRATION_GUIDE.md)**
 
 ### Tier 1 Features (100% Complete)
 
@@ -46,7 +57,7 @@
 - ✅ Prometheus Metrics + Grafana Dashboards
 - ✅ 100+ Tests Passing (Unit + E2E)
 
-**Roadmap:** See [`docs/roadmap/ROADMAP_2025.md`](docs/roadmap/ROADMAP_2025.md)
+**Roadmap:** See [`docs/roadmap/ROADMAP.md`](docs/roadmap/ROADMAP.md)
 
 ### ✨ Key Features
 
@@ -669,15 +680,25 @@ docker-compose exec bot npx tsx src/database/migrate.ts
 docker-compose exec bot npx tsx src/deploy-commands.ts
 ```
 
-### VPS Shared Infrastructure Deployment (Recommended for Production)
+### VPS Shared Infrastructure Deployment (Production)
 
-**APOLO integrates seamlessly with existing VPS infrastructure, sharing PostgreSQL and Redis with other applications.**
+**APOLO is currently deployed and operational on VPS shared infrastructure.**
+
+**Live Status:**
+- ✅ Bot: APOLO - Dota2#0567 ONLINE
+- ✅ VPS: zapclaudio.com (31.97.103.184)
+- ✅ Database: PostgreSQL 16 (shared, isolated database `apolo_dota2`)
+- ✅ Cache: Redis 7 (shared, namespace `apolo:*`)
+- ✅ Deployment: `/opt/apolo-bot`
 
 **Architecture:**
 - ✅ Shared PostgreSQL 16 (separate database: `apolo_dota2`)
 - ✅ Shared Redis 7 (namespace isolation: `apolo:*`)
 - ✅ Auto-deploy via GitHub Actions on push to `main`
 - ✅ Zero interference with other projects (n8n, api-node, etc)
+
+**Complete Guide:** See [VPS Shared Integration Guide](docs/deployment/VPS_SHARED_INTEGRATION_GUIDE.md)  
+**Current Status:** See [VPS Deployment Status](docs/deployment/VPS_DEPLOYMENT_STATUS.md)
 
 **Quick Setup:**
 

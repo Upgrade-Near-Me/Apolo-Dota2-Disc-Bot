@@ -1,13 +1,15 @@
-# 🚀 Migração Futura - APOLO para VPS Exclusiva
+# 📄 Archived: Migração para VPS Exclusiva (Futuro)
 
-## 📋 Overview
+Este guia foi arquivado para evitar distrações antes do lançamento Tier 1.
 
-Este guia cobre a migração do APOLO de VPS compartilhada (zapclaudio.com) para VPS exclusiva no futuro.
+Status atual do projeto (prioridades):
+- “Not Doing (Skipped/Deprioritized): New infra experiments before Tier 1 ship”
 
-**Tempo Estimado:** 30 minutos  
-**Downtime:** ~5 minutos (com estratégia blue-green: 0 minutos)
+Quando for retomado, consolidaremos em um único guia. Por agora, utilize:
+- [docs/deployment/VPS_SHARED_INTEGRATION_GUIDE.md](docs/deployment/VPS_SHARED_INTEGRATION_GUIDE.md)
+- [docs/deployment/SAFE_VPS_DEPLOYMENT.md](docs/deployment/SAFE_VPS_DEPLOYMENT.md)
 
----
+PT-BR: Este documento foi movido para arquivo conforme as prioridades atuais. Use os guias acima para o ambiente compartilhado.
 
 ## 🎯 Por que Migrar?
 
