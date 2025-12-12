@@ -76,10 +76,13 @@ const config: Config = {
   performanceTarget: 2500,
 };
 
+// Validate required environment variables
+// Note: DATABASE_URL is now built from separate vars (DB_HOST, DB_USER, DB_PASSWORD)
+// so we validate the constructed value instead of the env var
 const requiredEnv = [
   ['DISCORD_TOKEN', config.discord.token],
   ['DISCORD_CLIENT_ID', config.discord.clientId],
-  ['DATABASE_URL', config.database.url],
+  ['DATABASE_URL (constructed)', config.database.url],
 ];
 
 for (const [name, value] of requiredEnv) {
