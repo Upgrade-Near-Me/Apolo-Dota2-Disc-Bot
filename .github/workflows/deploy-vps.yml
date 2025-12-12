@@ -55,12 +55,19 @@ jobs:
 
       - name: Deploy to VPS
         run: |
-          # 1. Copiar o docker-compose pronto para a VPS
+          # 1. Autenticar Docker no VPS com GHCR
+          ssh -i private_key -o StrictHostKeyChecking=no \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+            echo "✅ Autenticação GHCR concluída"
+          EOF
+
+          # 2. Copiar o docker-compose pronto para a VPS
           scp -i private_key -o StrictHostKeyChecking=no \
             docker-compose.shared.yml \
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/apolo-bot/docker-compose.yml
 
-          # 2. Criar .env na VPS com os Secrets
+          # 3. Criar .env na VPS com os Secrets
           ssh -i private_key -o StrictHostKeyChecking=no \
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
             mkdir -p /opt/apolo-bot
@@ -78,7 +85,7 @@ jobs:
           ENVFILE
           EOF
 
-          # 3. Executar o Deploy
+          # 4. Executar o Deploy
           ssh -i private_key -o StrictHostKeyChecking=no \
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
             cd /opt/apolo-bot

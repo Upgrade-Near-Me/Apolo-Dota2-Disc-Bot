@@ -1,16 +1,46 @@
-# 🔧 APOLO Monitoring & Reporting Scripts
+# 🔧 APOLO Monitoring & Deployment Scripts
 
-Professional monitoring and reporting tools for APOLO CI/CD and health status.
+Professional monitoring, reporting, and deployment tools for APOLO.
 
 ## 📋 Overview
 
-Three complementary scripts:
-
+**Monitoring & Reporting:**
 1. **`monitor-ci.ts`** - GitHub Actions CI/CD pipeline monitoring
 2. **`health-check.ts`** - Local application health verification
 3. **`report.ts`** - Consolidated status report with recommendations
 
+**Deployment:**
+4. **`vps-docker-auth.sh`** - VPS Docker authentication setup for private images
+
 ## 🚀 Quick Start
+
+### 🔐 VPS Docker Authentication (NEW)
+
+**Setup Docker to pull private GHCR images:**
+
+```bash
+# Copiar script para VPS
+scp scripts/vps-docker-auth.sh root@YOUR_VPS_IP:/root/
+
+# SSH e executar
+ssh root@YOUR_VPS_IP
+chmod +x /root/vps-docker-auth.sh
+/root/vps-docker-auth.sh
+```
+
+**O que faz:**
+- ✅ Autentica Docker no GitHub Container Registry
+- ✅ Testa pull da imagem privada
+- ✅ Valida configuração
+- ✅ Mostra próximos passos
+
+**Pré-requisitos:**
+- Personal Access Token GitHub com scope `read:packages`
+- Acesso SSH ao VPS
+
+**Documentação:** Ver [VPS Docker Auth Guide](../docs/deployment/VPS_DOCKER_AUTH_GUIDE.md)
+
+---
 
 ### Monitor CI/CD Pipeline
 

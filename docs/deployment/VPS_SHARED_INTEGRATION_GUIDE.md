@@ -151,11 +151,15 @@ redis:6379/
 - Branch: `main` (production branch)
 - Personal Access Token with:
   - `packages:write` (for GHCR push)
+  - `read:packages` (for GHCR pull) ← **CRITICAL**
   - `repo` (for workflow access)
+
+**⚠️ IMPORTANTE:** A imagem `ghcr.io/upgrade-near-me/apolo-dota2-disc-bot:latest` é **PRIVADA**. Autenticação é obrigatória.
 
 ### On VPS (zapclaudio.com)
 
 - SSH access to VPS (user: root, IP: 31.97.103.184)
+- **Docker login configurado para GHCR** (ver [VPS Docker Auth Guide](VPS_DOCKER_AUTH_GUIDE.md))
 - Existing services running:
   - PostgreSQL 16 container
   - Redis 7 container
@@ -187,10 +191,11 @@ Add these secrets one by one:
 #### Docker & VPS Access
 
 ```yaml
-# GitHub Container Registry (GHCR) token
+# GitHub Container Registry (GHCR) token - OBRIGATÓRIO
 GHCR_TOKEN: ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 # Generate at: https://github.com/settings/tokens
-# Permissions: packages:write
+# Permissions: read:packages, write:packages
+# ⚠️ CRÍTICO: Sem este token, o VPS não consegue puxar a imagem privada
 
 # VPS SSH access
 VPS_HOST: 31.97.103.184
@@ -276,7 +281,38 @@ Settings → Secrets and variables → Actions → Repository secrets
 ssh root@31.97.103.184
 ```
 
-### 2. Create APOLO Database
+### 2. Configure Docker Authentication for GHCR
+
+**⚠️ CRÍTICO:** Este passo é obrigatório para acessar a imagem privada.
+
+```bash
+# Opção 1: Usar script automatizado (recomendado)
+# Copiar script do repositório para o VPS
+scp scripts/vps-docker-auth.sh root@31.97.103.184:/root/
+ssh root@31.97.103.184
+chmod +x /root/vps-docker-auth.sh
+/root/vps-docker-auth.sh
+
+# Opção 2: Configuração manual
+# 1. Criar Personal Access Token em: https://github.com/settings/tokens
+#    Scopes: read:packages, write:packages
+# 2. Fazer login no GHCR:
+echo "YOUR_GITHUB_PAT" | docker login ghcr.io -u upgrade-near-me --password-stdin
+
+# 3. Testar pull da imagem
+docker pull ghcr.io/upgrade-near-me/apolo-dota2-disc-bot:latest
+```
+
+**Saída esperada:**
+```
+Login Succeeded
+latest: Pulling from upgrade-near-me/apolo-dota2-disc-bot
+✅ Download complete
+```
+
+**Detalhes completos:** Ver [VPS Docker Auth Guide](VPS_DOCKER_AUTH_GUIDE.md)
+
+### 3. Create APOLO Database
 
 ```bash
 # Connect to PostgreSQL container
@@ -292,7 +328,7 @@ GRANT ALL PRIVILEGES ON DATABASE apolo_dota2 TO apolo_user;
 \q  # Exit
 ```
 
-### 3. Update VPS Docker Compose
+### 4. Update VPS Docker Compose
 
 Edit `/root/VPS-UPGRADE-VKM4-01-HTG-ZCB/docker-compose.yml`:
 
@@ -302,7 +338,7 @@ services:
   # ... existing services (n8n, api-node-template, etc) ...
 
   apolo-bot:
-    image: ghcr.io/upgrade-near-me/apolo:latest
+    image: ghcr.io/upgrade-near-me/apolo-dota2-disc-bot:latest  # ← Nome correto da imagem
     container_name: apolo-bot
     restart: always
     
@@ -552,7 +588,46 @@ docker logs --tail=100 apolo-bot
 # 2. Redis connection error → Check REDIS_URL and REDIS_PREFIX
 # 3. Discord token invalid → Verify DISCORD_TOKEN secret
 # 4. Missing environment variables → Check .env file
+# 5. Image pull error → Check Docker authentication (see below)
 ```
+
+### Docker Image Pull Error (Unauthorized)
+
+**Erro:** `pull access denied for ghcr.io/upgrade-near-me/apolo-dota2-disc-bot, repository does not exist or may require 'docker login': denied: unauthorized`
+
+**Causa:** Imagem privada requer autenticação no GHCR
+
+**Solução:**
+
+```bash
+# SSH para VPS
+ssh root@31.97.103.184
+
+# Fazer login no GHCR com Personal Access Token
+echo "SEU_GITHUB_PAT" | docker login ghcr.io -u upgrade-near-me --password-stdin
+
+# OU usar script automatizado
+/root/vps-docker-auth.sh
+
+# Testar pull manual
+docker pull ghcr.io/upgrade-near-me/apolo-dota2-disc-bot:latest
+
+# Verificar autenticação
+cat ~/.docker/config.json
+# Deve conter entrada para ghcr.io
+
+# Tentar deploy novamente
+cd /opt/apolo-bot
+docker compose pull
+docker compose up -d
+```
+
+**Verificar GitHub Token:**
+- Vá para: https://github.com/settings/tokens
+- Token deve ter scope `read:packages` ativado
+- Token não pode estar expirado (geralmente 90 dias)
+
+**Ver guia completo:** [VPS Docker Auth Guide](VPS_DOCKER_AUTH_GUIDE.md)
 
 ### Database Connection Error
 
