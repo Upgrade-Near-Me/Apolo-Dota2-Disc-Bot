@@ -8,6 +8,8 @@ import { i18nService } from '../../I18nService.js';
 import { applyTheme, CATEGORY_COLORS, createProgressBar } from '../../utils/embedTheme.js';
 import type { Locale } from '../../types/dota.js';
 
+type ThemeCategory = keyof typeof CATEGORY_COLORS;
+
 export function createDashboardEmbed(locale: Locale): EmbedBuilder {
   const embed = new EmbedBuilder()
     .setTitle('🎮 APOLO COMMAND CENTER')
@@ -166,9 +168,9 @@ export function createMatchEmbed(
 export function createLeaderboardEmbed(
   category: 'wins' | 'gpm' | 'xpm' | 'streak',
   entries: Array<{ rank: number; name: string; value: string | number }>,
-  locale: Locale
+  _locale: Locale
 ): EmbedBuilder {
-  const categoryLabels = {
+  const categoryLabels: Record<'wins' | 'gpm' | 'xpm' | 'streak', { emoji: string; title: string; color: ThemeCategory }> = {
     wins: { emoji: '🎯', title: 'Highest Win Rate', color: 'LEADERBOARD' },
     gpm: { emoji: '💰', title: 'Highest GPM Average', color: 'ANALYTICS' },
     xpm: { emoji: '📈', title: 'Highest XPM Average', color: 'ANALYTICS' },
@@ -186,6 +188,6 @@ export function createLeaderboardEmbed(
     .setFooter({ text: 'Updates hourly' })
     .setTimestamp();
 
-  return applyTheme(embed, config.color as any);
+  return applyTheme(embed, config.color);
 }
 
