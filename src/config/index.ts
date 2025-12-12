@@ -33,6 +33,18 @@ interface Config {
   performanceTarget: number;
 }
 
+// Build DATABASE_URL from separate vars if not provided (handles special chars in passwords)
+const DATABASE_URL = process.env.DATABASE_URL || 
+  (process.env.DB_HOST && process.env.DB_USER && process.env.DB_PASSWORD && process.env.DB_NAME
+    ? `postgresql://${process.env.DB_USER}:${encodeURIComponent(process.env.DB_PASSWORD)}@${process.env.DB_HOST}:${process.env.DB_PORT || '5432'}/${process.env.DB_NAME}`
+    : undefined);
+
+// Build REDIS_URL from separate vars if not provided (handles special chars in passwords)
+const REDIS_URL = process.env.REDIS_URL ||
+  (process.env.REDIS_HOST && process.env.REDIS_PASSWORD
+    ? `redis://:${encodeURIComponent(process.env.REDIS_PASSWORD)}@${process.env.REDIS_HOST}:${process.env.REDIS_PORT || '6379'}/0`
+    : 'redis://localhost:6379');
+
 const config: Config = {
   discord: {
     token: process.env.DISCORD_TOKEN as string,
@@ -40,10 +52,10 @@ const config: Config = {
     guildId: process.env.DISCORD_GUILD_ID,
   },
   database: {
-    url: process.env.DATABASE_URL as string,
+    url: DATABASE_URL as string,
   },
   redis: {
-    url: process.env.REDIS_URL || 'redis://localhost:6379',
+    url: REDIS_URL,
   },
   api: {
     stratz: {

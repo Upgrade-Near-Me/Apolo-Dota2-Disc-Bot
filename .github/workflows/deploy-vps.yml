@@ -76,8 +76,14 @@ jobs:
           DISCORD_TOKEN=${{ secrets.DISCORD_TOKEN }}
           DISCORD_CLIENT_ID=${{ secrets.DISCORD_CLIENT_ID }}
           DISCORD_GUILD_ID=${{ secrets.DISCORD_GUILD_ID }}
-          DATABASE_URL=postgresql://${{ secrets.APOLO_DB_USER }}:${{ secrets.APOLO_DB_PASSWORD }}@postgres:5432/${{ secrets.APOLO_DB_NAME }}
-          REDIS_URL=redis://:${{ secrets.REDIS_PASSWORD }}@redis:6379/0
+          DB_HOST=postgres
+          DB_PORT=5432
+          DB_NAME=${{ secrets.APOLO_DB_NAME }}
+          DB_USER=${{ secrets.APOLO_DB_USER }}
+          DB_PASSWORD=${{ secrets.APOLO_DB_PASSWORD }}
+          REDIS_HOST=redis
+          REDIS_PORT=6379
+          REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
           REDIS_PREFIX=${{ secrets.REDIS_PREFIX }}
           STRATZ_API_TOKEN_1=${{ secrets.STRATZ_API_TOKEN_1 }}
           STEAM_API_KEY=${{ secrets.STEAM_API_KEY }}
