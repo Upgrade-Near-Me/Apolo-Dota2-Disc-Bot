@@ -292,7 +292,7 @@ jobs:
           
           # Run migrations
           echo "🗄️  Running database migrations..."
-          docker-compose -p apolo exec -T bot npx tsx src/database/migrate.ts || \
+          docker-compose -p apolo exec -T apolo-bot npx tsx src/database/migrate.ts || \
             (echo "⚠️ Migrations failed"; exit 1)
           
           echo "✅ Migrations completed"
@@ -323,7 +323,7 @@ jobs:
           # Check network connectivity
           echo ""
           echo "🌐 Network Check:"
-          docker-compose -p apolo exec -T bot npx tsx -e "console.log('✅ Container connectivity OK')" || true
+          docker-compose -p apolo exec -T apolo-bot npx tsx -e "console.log('✅ Container connectivity OK')" || true
           EOF
       
       - name: Deployment Summary
