@@ -53,17 +53,6 @@ services:
     tmpfs:
       - /tmp
       - /app/.npm
-    
-    # Resource limits (Protection against memory leaks & CPU spikes)
-    # CRITICAL: These limits ensure APOLO never impacts other VPS projects
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'      # Max 1 CPU core (other projects protected)
-          memory: 1G       # Max 1GB RAM (prevents OOM killing other containers)
-        reservations:
-          cpus: '0.5'      # Guaranteed 0.5 core
-          memory: 512M     # Guaranteed 512MB
 
 # ==========================================
 # NOTES:
