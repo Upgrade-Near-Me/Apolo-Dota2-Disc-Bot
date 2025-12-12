@@ -235,20 +235,96 @@ jobs:
             echo "🚀 Starting new container..."
             docker compose up -d
             
-            echo "⏳ Waiting for container to start..."
+            echo "⏳ Waiting for container to initialize (10s)..."
             sleep 10
             
+            # ========================================
+            # 🔍 VERIFICAÇÃO 1: Container está running?
+            # ========================================
+            echo ""
+            echo "=== Container Status Check ==="
             if ! docker ps | grep -q apolo-bot; then
-              echo "❌ ERROR: Container failed to start"
-              echo "=== Recent Logs ==="
-              docker logs apolo-bot --tail=50 || true
+              echo "❌ ERROR: Container NOT running (crashed immediately)"
+              echo ""
+              echo "=== Container List (all) ==="
+              docker ps -a | grep apolo-bot || true
+              echo ""
+              echo "=== FULL LOGS (last 100 lines) ==="
+              docker logs apolo-bot --tail=100 || true
+              echo ""
+              echo "=== Docker Inspect (exit code) ==="
+              docker inspect apolo-bot --format='{{.State.Status}} - Exit Code: {{.State.ExitCode}}' || true
               exit 1
             fi
             
-            echo "✅ Container started successfully"
+            echo "✅ Container is running (initial check passed)"
             
-            echo "⏳ Waiting for bot to be ready (40s)..."
-            sleep 40
+            # ========================================
+            # 🔍 VERIFICAÇÃO 2: Logs durante inicialização
+            # ========================================
+            echo ""
+            echo "=== Recent Logs (first 10s) ==="
+            docker logs apolo-bot --tail=30
+            
+            echo ""
+            echo "⏳ Waiting for bot to fully initialize (30s more)..."
+            sleep 30
+            
+            # ========================================
+            # 🔍 VERIFICAÇÃO 3: Container ainda está vivo?
+            # ========================================
+            echo ""
+            echo "=== Container Status After 40s Total ==="
+            if ! docker ps | grep -q apolo-bot; then
+              echo "❌ ERROR: Container CRASHED during initialization"
+              echo ""
+              echo "=== CRASH LOGS (last 150 lines) ==="
+              docker logs apolo-bot --tail=150 || true
+              echo ""
+              echo "=== Docker Inspect ==="
+              docker inspect apolo-bot --format='{{.State.Status}} - Exit Code: {{.State.ExitCode}} - Error: {{.State.Error}}' || true
+              exit 1
+            fi
+            
+            echo "✅ Container survived initialization period"
+            
+            # ========================================
+            # 🔍 VERIFICAÇÃO 4: Logs completos antes migração
+            # ========================================
+            echo ""
+            echo "=== Full Logs Before Migration ==="
+            docker logs apolo-bot --tail=50
+            
+            echo ""
+            echo "✅ Pre-migration checks complete"
+      
+      - name: Run database migrations
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script_stop: true
+          script: |
+            cd /opt/apolo-bot
+            
+            # ========================================
+            # 🔍 VERIFICAÇÃO FINAL: Container rodando?
+            # ========================================
+            echo "=== Final Container Check Before Migration ==="
+            if ! docker ps | grep -q apolo-bot; then
+              echo "❌ FATAL: Container NOT RUNNING before migration"
+              echo ""
+              echo "=== ALL LOGS ==="
+              docker logs apolo-bot || true
+              echo ""
+              echo "=== Container State ==="
+              docker ps -a | grep apolo-bot || true
+              exit 1
+            fi
+            
+            echo "✅ Container confirmed running"
+            echo ""
             
             echo "🗄️ Running database migrations..."
             if ! docker exec apolo-bot npx tsx src/database/migrate.ts; then
@@ -264,7 +340,7 @@ jobs:
               exit 1
             fi
             
-            echo "✅ Deployment completed successfully"
+            echo "✅ Migrations and commands deployed"
       
       - name: Verify deployment
         uses: appleboy/ssh-action@v1.0.3
@@ -274,14 +350,35 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script_stop: false
           script: |
-            cd /opt/apolo-bot
-            
-            echo "=== Container Status ==="
-            docker ps | grep apolo-bot
-            
+            echo "=========================================="
+            echo "=== APOLO Deployment Verification ==="
+            echo "=========================================="
             echo ""
-            echo "=== Recent Logs ==="
-            docker logs apolo-bot --tail=30
+            
+            echo "1. Container Status:"
+            docker ps --filter "name=apolo-bot" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" || true
+            echo ""
+            
+            echo "2. Container Inspect (if running):"
+            docker inspect apolo-bot --format='Status: {{.State.Status}} | Running: {{.State.Running}} | Uptime: {{.State.StartedAt}}' 2>/dev/null || echo "Container not found"
+            echo ""
+            
+            echo "3. Recent Logs (last 30 lines):"
+            docker logs apolo-bot --tail=30 2>&1 || echo "No logs available"
+            echo ""
+            
+            echo "4. Health Check (port 9100):"
+            docker exec apolo-bot curl -f http://localhost:9100/health 2>/dev/null && echo "✅ Health endpoint responding" || echo "⚠️ No health response"
+            echo ""
+            
+            echo "5. Network Connectivity:"
+            docker exec apolo-bot ping -c 2 postgres 2>/dev/null && echo "✅ PostgreSQL reachable" || echo "⚠️ PostgreSQL unreachable"
+            docker exec apolo-bot ping -c 2 redis 2>/dev/null && echo "✅ Redis reachable" || echo "⚠️ Redis unreachable"
+            echo ""
+            
+            echo "=========================================="
+            echo "✅ Deployment verification complete"
+            echo "=========================================="
             
             echo "✅ Migrations and commands deployed"
       
