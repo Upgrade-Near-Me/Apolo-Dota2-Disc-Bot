@@ -69,7 +69,7 @@ COPY --from=builder /app/dist ./dist
 COPY migrations ./migrations
 
 # Copy locales (needed at runtime)
-COPY src/locales ./src/locales
+COPY src/locales ./dist/locales
 
 # Set ownership to non-root user
 RUN chown -R nodejs:nodejs /app
