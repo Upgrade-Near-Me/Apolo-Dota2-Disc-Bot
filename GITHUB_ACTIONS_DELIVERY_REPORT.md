@@ -192,12 +192,14 @@ npm run validate:secrets
 - After fixes → ready to deploy
 
 ### Timeline
+
 | Phase | Status | Time |
 |-------|--------|------|
 | Workflow redesign | ✅ Complete | 15 min |
 | Security hardening | ✅ Complete | 10 min |
 | Documentation | ✅ Complete | 12 min |
 | Testing | ✅ Complete | 3 min |
+
 | **Code fixes** | 🟡 In progress | 15 min |
 | **Deployment** | ⏳ Blocked | 5 min |
 | **Verification** | ⏳ Blocked | 5 min |

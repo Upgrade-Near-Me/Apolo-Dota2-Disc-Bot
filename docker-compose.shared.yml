@@ -17,68 +17,16 @@ services:
   # APOLO Discord Bot
   # ==========================================
   apolo-bot:
-    image: ghcr.io/upgrade-near-me/apolo:latest
+    image: ghcr.io/upgrade-near-me/apolo-dota2-disc-bot:latest
     container_name: apolo-bot
     restart: always
     
     networks:
       - proxy
     
-    environment:
-      # Discord Configuration
-      DISCORD_TOKEN: ${DISCORD_TOKEN}
-      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
-      DISCORD_GUILD_ID: ${DISCORD_GUILD_ID:-}
-      
-      # Database - SHARED PostgreSQL 16 (external container)
-      DATABASE_URL: postgresql://${APOLO_DB_USER}:${APOLO_DB_PASSWORD}@postgres:5432/${APOLO_DB_NAME}
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_NAME: ${APOLO_DB_NAME}
-      DB_USER: ${APOLO_DB_USER}
-      DB_PASSWORD: ${APOLO_DB_PASSWORD}
-      
-      # Redis - SHARED Redis 7 (external container with namespace isolation)
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
-      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
-      REDIS_PREFIX: apolo  # Namespace isolation: apolo:*
-      
-      # API Keys - Stratz (supports rotation 1-10)
-      STRATZ_API_TOKEN_1: ${STRATZ_API_TOKEN_1}
-      STRATZ_API_TOKEN_2: ${STRATZ_API_TOKEN_2:-}
-      STRATZ_API_TOKEN_3: ${STRATZ_API_TOKEN_3:-}
-      STRATZ_API_TOKEN_4: ${STRATZ_API_TOKEN_4:-}
-      STRATZ_API_TOKEN_5: ${STRATZ_API_TOKEN_5:-}
-      STRATZ_API_TOKEN_6: ${STRATZ_API_TOKEN_6:-}
-      STRATZ_API_TOKEN_7: ${STRATZ_API_TOKEN_7:-}
-      STRATZ_API_TOKEN_8: ${STRATZ_API_TOKEN_8:-}
-      STRATZ_API_TOKEN_9: ${STRATZ_API_TOKEN_9:-}
-      STRATZ_API_TOKEN_10: ${STRATZ_API_TOKEN_10:-}
-      
-      # Steam Web API
-      STEAM_API_KEY: ${STEAM_API_KEY}
-      
-      # Google Gemini AI (supports rotation 1-10)
-      GEMINI_API_KEY_1: ${GEMINI_API_KEY_1}
-      GEMINI_API_KEY_2: ${GEMINI_API_KEY_2:-}
-      GEMINI_API_KEY_3: ${GEMINI_API_KEY_3:-}
-      GEMINI_API_KEY_4: ${GEMINI_API_KEY_4:-}
-      GEMINI_API_KEY_5: ${GEMINI_API_KEY_5:-}
-      GEMINI_API_KEY_6: ${GEMINI_API_KEY_6:-}
-      GEMINI_API_KEY_7: ${GEMINI_API_KEY_7:-}
-      GEMINI_API_KEY_8: ${GEMINI_API_KEY_8:-}
-      GEMINI_API_KEY_9: ${GEMINI_API_KEY_9:-}
-      GEMINI_API_KEY_10: ${GEMINI_API_KEY_10:-}
-      
-      # Node Environment
-      NODE_ENV: production
-      LOG_LEVEL: ${LOG_LEVEL:-info}
-      
-      # Metrics (internal only - for Prometheus)
-      METRICS_PORT: 9100
-      METRICS_HOST: 0.0.0.0
+    # Load environment variables from .env file (created by GitHub Actions)
+    env_file:
+      - .env
     
     # NO public ports (Discord bot doesn't need external access)
     # Metrics port exposed only internally for Prometheus

@@ -135,112 +135,39 @@ jobs:
             LOG_LEVEL=info
             METRICS_PORT=9100
             ENV_EOF
+      
+      - name: Copy docker-compose to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: "docker-compose.shared.yml"
+          target: "/opt/apolo-bot/"
+          strip_components: 0
+      
+      - name: Rename docker-compose file
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script_stop: true
+          script: |
+            cd /opt/apolo-bot
+            mv docker-compose.shared.yml docker-compose.yml
             
-            # Create docker-compose.yml with dedicated PostgreSQL and Redis
-            cat > docker-compose.yml << 'COMPOSE_EOF'
-            version: '3.8'
-            
-            networks:
-              proxy:
-                external: true
-              internal:
-                driver: bridge
-            
-            services:
-              apolo-bot:
-                image: ghcr.io/${{ github.repository }}:latest
-                container_name: apolo-bot
-                restart: always
-                
-                networks:
-                  - proxy
-                  - internal
-                
-                env_file:
-                  - .env
-                
-                expose:
-                  - "9100"
-                
-                depends_on:
-                  postgres:
-                    condition: service_healthy
-                  redis:
-                    condition: service_started
-                
-                deploy:
-                  resources:
-                    limits:
-                      cpus: '1.0'
-                      memory: 1G
-                    reservations:
-                      cpus: '0.5'
-                      memory: 512M
-                
-                healthcheck:
-                  test: ["CMD", "curl", "-f", "http://localhost:9100/health"]
-                  interval: 30s
-                  timeout: 10s
-                  retries: 3
-                  start_period: 40s
-              
-              postgres:
-                image: postgres:16-alpine
-                container_name: apolo-postgres
-                restart: always
-                
-                networks:
-                  - internal
-                
-                environment:
-                  POSTGRES_USER: ${{ secrets.APOLO_DB_USER }}
-                  POSTGRES_PASSWORD: ${{ secrets.APOLO_DB_PASSWORD }}
-                  POSTGRES_DB: ${{ secrets.APOLO_DB_NAME }}
-                
-                volumes:
-                  - postgres_data:/var/lib/postgresql/data
-                
-                healthcheck:
-                  test: ["CMD-SHELL", "pg_isready -U ${{ secrets.APOLO_DB_USER }}"]
-                  interval: 10s
-                  timeout: 5s
-                  retries: 5
-              
-              redis:
-                image: redis:7-alpine
-                container_name: apolo-redis
-                restart: always
-                
-                networks:
-                  - internal
-                
-                command: redis-server --requirepass ${{ secrets.REDIS_PASSWORD }}
-                
-                volumes:
-                  - redis_data:/data
-                
-                healthcheck:
-                  test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
-                  interval: 10s
-                  timeout: 5s
-                  retries: 5
-            
-            volumes:
-              postgres_data:
-              redis_data:
-            COMPOSE_EOF
-            
-            # Create network if needed
+            # Verify proxy network exists (should already exist from VPS infrastructure)
             if ! docker network ls | grep -q proxy; then
-              echo "Creating Docker network 'proxy'"
+              echo "⚠️ WARNING: Network 'proxy' not found - will be created"
               docker network create proxy
             else
-              echo "Docker network 'proxy' already exists"
+              echo "✅ Network 'proxy' confirmed (shared VPS infrastructure)"
             fi
             
-            echo "✅ VPS environment prepared successfully (dedicated PostgreSQL 16 + Redis 7)"
+            echo "✅ VPS environment prepared (using SHARED PostgreSQL 16 + Redis 7)"
       
-      - name: Deploy APOLO bot (with dedicated database and cache)
+      - name: Deploy APOLO bot (shared infrastructure mode)
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
