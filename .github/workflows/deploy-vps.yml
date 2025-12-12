@@ -85,6 +85,7 @@ jobs:
           REDIS_PORT=6379
           REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
           REDIS_PREFIX=${{ secrets.REDIS_PREFIX }}
+          REDIS_URL=redis://:${{ secrets.REDIS_PASSWORD }}@redis:6379/0
           STRATZ_API_TOKEN_1=${{ secrets.STRATZ_API_TOKEN_1 }}
           STEAM_API_KEY=${{ secrets.STEAM_API_KEY }}
           GEMINI_API_KEY_1=${{ secrets.GEMINI_API_KEY_1 }}
