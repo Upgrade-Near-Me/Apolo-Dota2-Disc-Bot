@@ -129,8 +129,9 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           source: "docker-compose.shared.yml,.env.production"
-          target: "/opt/apolo-bot"
+          target: "/opt/apolo-bot/"
           strip_components: 0
+          overwrite: true
       
       - name: Prepare VPS environment
         uses: appleboy/ssh-action@v1.0.3
@@ -147,9 +148,24 @@ jobs:
             mkdir -p /opt/apolo-bot
             cd /opt/apolo-bot
             
-            [ -f .env.production ] && mv .env.production .env
-            [ -f docker-compose.shared.yml ] && mv docker-compose.shared.yml docker-compose.yml
+            # Verify files were copied
+            if [ ! -f .env.production ]; then
+              echo "ERROR: .env.production not found after copy"
+              ls -la
+              exit 1
+            fi
             
+            if [ ! -f docker-compose.shared.yml ]; then
+              echo "ERROR: docker-compose.shared.yml not found after copy"
+              ls -la
+              exit 1
+            fi
+            
+            # Rename files
+            mv .env.production .env
+            mv docker-compose.shared.yml docker-compose.yml
+            
+            # Create network if needed
             if ! docker network ls | grep -q proxy; then
               echo "Creating Docker network 'proxy'"
               docker network create proxy
@@ -157,7 +173,7 @@ jobs:
               echo "Docker network 'proxy' already exists"
             fi
             
-            echo "VPS environment prepared successfully"
+            echo "✅ VPS environment prepared successfully"
       
       - name: Verify infrastructure
         uses: appleboy/ssh-action@v1.0.3
