@@ -92,48 +92,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Create environment file
-        run: |
-          cat > .env.production << EOF
-          # Discord Configuration
-          DISCORD_TOKEN=${{ secrets.DISCORD_TOKEN }}
-          DISCORD_CLIENT_ID=${{ secrets.DISCORD_CLIENT_ID }}
-          DISCORD_GUILD_ID=${{ secrets.DISCORD_GUILD_ID }}
-          
-          # Database Configuration
-          APOLO_DB_USER=${{ secrets.APOLO_DB_USER }}
-          APOLO_DB_PASSWORD=${{ secrets.APOLO_DB_PASSWORD }}
-          APOLO_DB_NAME=${{ secrets.APOLO_DB_NAME }}
-          DATABASE_URL=postgresql://${{ secrets.APOLO_DB_USER }}:${{ secrets.APOLO_DB_PASSWORD }}@postgres:5432/${{ secrets.APOLO_DB_NAME }}
-          
-          # Redis Configuration
-          REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
-          REDIS_URL=redis://:${{ secrets.REDIS_PASSWORD }}@redis:6379/0
-          REDIS_PREFIX=apolo
-          
-          # API Keys
-          STRATZ_API_TOKEN_1=${{ secrets.STRATZ_API_TOKEN_1 }}
-          STEAM_API_KEY=${{ secrets.STEAM_API_KEY }}
-          GEMINI_API_KEY_1=${{ secrets.GEMINI_API_KEY_1 }}
-          
-          # Environment
-          NODE_ENV=production
-          LOG_LEVEL=info
-          METRICS_PORT=9100
-          EOF
-      
-      - name: Copy files to VPS
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          source: "docker-compose.shared.yml,.env.production"
-          target: "/opt/apolo-bot/"
-          strip_components: 0
-          overwrite: true
-      
-      - name: Prepare VPS environment
+      - name: Prepare VPS environment and copy files
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -148,22 +107,78 @@ jobs:
             mkdir -p /opt/apolo-bot
             cd /opt/apolo-bot
             
-            # Verify files were copied
-            if [ ! -f .env.production ]; then
-              echo "ERROR: .env.production not found after copy"
-              ls -la
-              exit 1
-            fi
+            # Create .env from environment
+            cat > .env << 'ENV_EOF'
+            # Discord Configuration
+            DISCORD_TOKEN=${{ secrets.DISCORD_TOKEN }}
+            DISCORD_CLIENT_ID=${{ secrets.DISCORD_CLIENT_ID }}
+            DISCORD_GUILD_ID=${{ secrets.DISCORD_GUILD_ID }}
             
-            if [ ! -f docker-compose.shared.yml ]; then
-              echo "ERROR: docker-compose.shared.yml not found after copy"
-              ls -la
-              exit 1
-            fi
+            # Database Configuration
+            APOLO_DB_USER=${{ secrets.APOLO_DB_USER }}
+            APOLO_DB_PASSWORD=${{ secrets.APOLO_DB_PASSWORD }}
+            APOLO_DB_NAME=${{ secrets.APOLO_DB_NAME }}
+            DATABASE_URL=postgresql://${{ secrets.APOLO_DB_USER }}:${{ secrets.APOLO_DB_PASSWORD }}@postgres:5432/${{ secrets.APOLO_DB_NAME }}
             
-            # Rename files
-            mv .env.production .env
-            mv docker-compose.shared.yml docker-compose.yml
+            # Redis Configuration
+            REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
+            REDIS_URL=redis://:${{ secrets.REDIS_PASSWORD }}@redis:6379/0
+            REDIS_PREFIX=apolo
+            
+            # API Keys
+            STRATZ_API_TOKEN_1=${{ secrets.STRATZ_API_TOKEN_1 }}
+            STEAM_API_KEY=${{ secrets.STEAM_API_KEY }}
+            GEMINI_API_KEY_1=${{ secrets.GEMINI_API_KEY_1 }}
+            
+            # Environment
+            NODE_ENV=production
+            LOG_LEVEL=info
+            METRICS_PORT=9100
+            ENV_EOF
+            
+            # Create docker-compose.yml from shared config
+            cat > docker-compose.yml << 'COMPOSE_EOF'
+            version: '3.8'
+            
+            networks:
+              proxy:
+                external: true
+            
+            services:
+              apolo-bot:
+                image: ghcr.io/${{ github.repository }}:latest
+                container_name: apolo-bot
+                restart: always
+                
+                networks:
+                  - proxy
+                
+                env_file:
+                  - .env
+                
+                expose:
+                  - "9100"
+                
+                depends_on:
+                  - postgres
+                  - redis
+                
+                deploy:
+                  resources:
+                    limits:
+                      cpus: '1.0'
+                      memory: 1G
+                    reservations:
+                      cpus: '0.5'
+                      memory: 512M
+                
+                healthcheck:
+                  test: ["CMD", "curl", "-f", "http://localhost:9100/health"]
+                  interval: 30s
+                  timeout: 10s
+                  retries: 3
+                  start_period: 40s
+            COMPOSE_EOF
             
             # Create network if needed
             if ! docker network ls | grep -q proxy; then
@@ -221,7 +236,7 @@ jobs:
             docker compose up -d
             
             echo "⏳ Waiting for container to start..."
-            sleep 15
+            sleep 10
             
             if ! docker ps | grep -q apolo-bot; then
               echo "❌ ERROR: Container failed to start"
@@ -231,22 +246,42 @@ jobs:
             fi
             
             echo "✅ Container started successfully"
+            
+            echo "⏳ Waiting for bot to be ready (40s)..."
+            sleep 40
+            
+            echo "🗄️ Running database migrations..."
+            if ! docker exec apolo-bot npx tsx src/database/migrate.ts; then
+              echo "⚠️ Migrations failed, checking logs..."
+              docker logs apolo-bot --tail=100
+              exit 1
+            fi
+            
+            echo "📡 Deploying Discord commands..."
+            if ! docker exec apolo-bot npx tsx src/deploy-commands.ts; then
+              echo "⚠️ Command deployment failed, checking logs..."
+              docker logs apolo-bot --tail=50
+              exit 1
+            fi
+            
+            echo "✅ Deployment completed successfully"
       
-      - name: Run database migrations
+      - name: Verify deployment
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          script_stop: true
+          script_stop: false
           script: |
             cd /opt/apolo-bot
             
-            echo "🗄️ Running database migrations..."
-            docker exec apolo-bot npx tsx src/database/migrate.ts
+            echo "=== Container Status ==="
+            docker ps | grep apolo-bot
             
-            echo "📡 Deploying Discord commands..."
-            docker exec apolo-bot npx tsx src/deploy-commands.ts
+            echo ""
+            echo "=== Recent Logs ==="
+            docker logs apolo-bot --tail=30
             
             echo "✅ Migrations and commands deployed"
       
