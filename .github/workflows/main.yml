@@ -292,8 +292,8 @@ jobs:
           
           # Run migrations
           echo "🗄️  Running database migrations..."
-          docker-compose -p apolo exec -T -e NPM_CONFIG_CACHE=/tmp/.npm apolo-bot \
-            sh -c "mkdir -p /tmp/.npm && npx tsx src/database/migrate.ts" || \
+          docker-compose -p apolo exec -T apolo-bot \
+            node dist/database/migrate.js || \
             (echo "⚠️ Migrations failed"; exit 1)
           
           echo "✅ Migrations completed"
