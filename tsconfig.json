@@ -8,7 +8,6 @@
     
     /* Emit */
     "outDir": "./dist",                          /* Output directory for compiled files */
-    "rootDir": "./src",                          /* Root directory of source files */
     "sourceMap": true,                           /* Generate .map files for debugging */
     "declaration": true,                         /* Generate .d.ts type declaration files */
     "declarationMap": true,                      /* Generate .d.ts.map files */
