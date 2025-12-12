@@ -116,11 +116,6 @@ services:
         reservations:
           cpus: '0.5'      # Guaranteed 0.5 core
           memory: 512M     # Guaranteed 512MB
-      restart_policy:
-        condition: any     # Restart on failure (isolation maintained)
-        delay: 5s
-        max_attempts: 3
-        window: 120s
 
 # ==========================================
 # NOTES:
