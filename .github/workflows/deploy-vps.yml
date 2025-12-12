@@ -7,7 +7,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ghcr.io/${{ github.repository }}
+  IMAGE_NAME: ghcr.io/upgrade-near-me/apolo-dota2-disc-bot
 
 jobs:
   build-and-push:
