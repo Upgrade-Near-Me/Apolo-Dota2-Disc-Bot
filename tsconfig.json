@@ -8,7 +8,7 @@
     
     /* Emit */
     "outDir": "./dist",                          /* Output directory for compiled files */
-    "rootDir": ".",                              /* Root directory of source files */
+    "rootDir": "./src",                          /* Root directory of source files */
     "sourceMap": true,                           /* Generate .map files for debugging */
     "declaration": true,                         /* Generate .d.ts type declaration files */
     "declarationMap": true,                      /* Generate .d.ts.map files */
@@ -46,9 +46,7 @@
   
   /* Include/Exclude */
   "include": [
-    "src/**/*",                                  /* Include all TypeScript files in src/ */
-    "tests/**/*",                                /* Include test files */
-    "scripts/**/*"                               /* Include monitoring scripts */
+    "src/**/*"                                   /* Include all TypeScript files in src/ */
   ],
   "exclude": [
     "node_modules",                              /* Exclude dependencies */
